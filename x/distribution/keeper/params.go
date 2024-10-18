@@ -16,6 +16,18 @@ func (k Keeper) GetUbi(ctx context.Context) (math.LegacyDec, error) {
 	return params.Ubi, nil
 }
 
+// SetUbi sets new ubi
+func (k Keeper) SetUbi(ctx context.Context, newUbi math.LegacyDec) error {
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	params.Ubi = newUbi
+
+	return k.Params.Set(ctx, params)
+}
+
 // GetWithdrawAddrEnabled returns the current distribution withdraw address
 // enabled parameter.
 func (k Keeper) GetWithdrawAddrEnabled(ctx context.Context) (enabled bool, err error) {
