@@ -245,7 +245,7 @@ func (k msgServer) EditValidator(ctx context.Context, msg *types.MsgEditValidato
 			return nil, types.ErrMinSelfDelegationDecreased
 		}
 
-		if msg.MinSelfDelegation.GTE(validator.Tokens) {
+		if msg.MinSelfDelegation.GT(validator.Tokens) {
 			return nil, types.ErrSelfDelegationBelowMinimum
 		}
 
