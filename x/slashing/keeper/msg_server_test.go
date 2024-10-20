@@ -125,6 +125,7 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 					DowntimeJailDuration:    time.Duration(34800000000000),
 					SlashFractionDoubleSign: slashFractionDoubleSign,
 					SlashFractionDowntime:   slashFractionDowntime,
+					SingularityHeight:       uint64(1),
 				},
 			},
 			expectErr: false,

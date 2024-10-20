@@ -45,6 +45,12 @@ func TestBeginBlocker(t *testing.T) {
 
 	ctx := app.BaseApp.NewContext(false)
 
+	params, err := slashingKeeper.GetParams(ctx)
+	require.NoError(t, err)
+
+	params.SingularityHeight = 1
+	require.NoError(t, slashingKeeper.SetParams(ctx, params))
+
 	pks := simtestutil.CreateTestPubKeys(1)
 	simtestutil.AddTestAddrsFromPubKeys(bankKeeper, stakingKeeper, ctx, pks, stakingKeeper.TokensFromConsensusPower(ctx, 200))
 	addr, pk := sdk.ValAddress(pks[0].Address()), pks[0]
@@ -84,7 +90,7 @@ func TestBeginBlocker(t *testing.T) {
 	require.Equal(t, time.Unix(0, 0).UTC(), info.JailedUntil)
 	require.Equal(t, int64(0), info.MissedBlocksCounter)
 
-	height := int64(0)
+	height := int64(2)
 
 	signedBlocksWindow, err := slashingKeeper.SignedBlocksWindow(ctx)
 	require.NoError(t, err)

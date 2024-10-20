@@ -59,4 +59,6 @@ message Params {
     (gogoproto.nullable)   = false,
     (amino.dont_omitempty) = true
   ];
+  // the block height until singularity is activated
+  uint64 singularity_height = 6;
 }

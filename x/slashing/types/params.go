@@ -11,6 +11,7 @@ import (
 const (
 	DefaultSignedBlocksWindow   = int64(100)
 	DefaultDowntimeJailDuration = 60 * 10 * time.Second
+	DefaultSingularityHeight    = 1209600 // 42 days with 3 seconds block time
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 // NewParams creates a new Params object
 func NewParams(
 	signedBlocksWindow int64, minSignedPerWindow math.LegacyDec, downtimeJailDuration time.Duration,
-	slashFractionDoubleSign, slashFractionDowntime math.LegacyDec,
+	slashFractionDoubleSign, slashFractionDowntime math.LegacyDec, singularityHeight uint64,
 ) Params {
 	return Params{
 		SignedBlocksWindow:      signedBlocksWindow,
@@ -30,6 +31,7 @@ func NewParams(
 		DowntimeJailDuration:    downtimeJailDuration,
 		SlashFractionDoubleSign: slashFractionDoubleSign,
 		SlashFractionDowntime:   slashFractionDowntime,
+		SingularityHeight:       singularityHeight,
 	}
 }
 
@@ -41,6 +43,7 @@ func DefaultParams() Params {
 		DefaultDowntimeJailDuration,
 		DefaultSlashFractionDoubleSign,
 		DefaultSlashFractionDowntime,
+		DefaultSingularityHeight,
 	)
 }
 
@@ -59,6 +62,9 @@ func (p Params) Validate() error {
 		return err
 	}
 	if err := validateSlashFractionDowntime(p.SlashFractionDowntime); err != nil {
+		return err
+	}
+	if err := validateSingularityHeight(p.SingularityHeight); err != nil {
 		return err
 	}
 	return nil
@@ -142,6 +148,19 @@ func validateSlashFractionDowntime(i interface{}) error {
 	}
 	if v.GT(math.LegacyOneDec()) {
 		return fmt.Errorf("downtime slash fraction too large: %s", v)
+	}
+
+	return nil
+}
+
+func validateSingularityHeight(i interface{}) error {
+	v, ok := i.(uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v == 0 {
+		return fmt.Errorf("singularity height must be positive: %d", v)
 	}
 
 	return nil

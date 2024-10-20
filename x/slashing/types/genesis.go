@@ -62,5 +62,10 @@ func ValidateGenesis(data GenesisState) error {
 		return fmt.Errorf("signed blocks window must be at least 10, is %d", signedWindow)
 	}
 
+	singularityHeight := data.Params.SingularityHeight
+	if singularityHeight == 0 {
+		return fmt.Errorf("singularity height must be positive, is %d", singularityHeight)
+	}
+
 	return nil
 }

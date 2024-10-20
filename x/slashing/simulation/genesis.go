@@ -20,6 +20,7 @@ const (
 	DowntimeJailDuration    = "downtime_jail_duration"
 	SlashFractionDoubleSign = "slash_fraction_double_sign"
 	SlashFractionDowntime   = "slash_fraction_downtime"
+	SingularityHeight       = "singularity_height"
 )
 
 // GenSignedBlocksWindow randomized SignedBlocksWindow
@@ -47,6 +48,10 @@ func GenSlashFractionDowntime(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDec(1).Quo(math.LegacyNewDec(int64(r.Intn(200) + 1)))
 }
 
+func GenSingularityHeight(r *rand.Rand) uint64 {
+	return uint64(simulation.RandIntBetween(r, 10, 1000))
+}
+
 // RandomizedGenState generates a random GenesisState for slashing
 func RandomizedGenState(simState *module.SimulationState) {
 	var signedBlocksWindow int64
@@ -64,9 +69,12 @@ func RandomizedGenState(simState *module.SimulationState) {
 	var slashFractionDowntime math.LegacyDec
 	simState.AppParams.GetOrGenerate(SlashFractionDowntime, &slashFractionDowntime, simState.Rand, func(r *rand.Rand) { slashFractionDowntime = GenSlashFractionDowntime(r) })
 
+	var singularityHeight uint64
+	simState.AppParams.GetOrGenerate(SingularityHeight, &singularityHeight, simState.Rand, func(r *rand.Rand) { singularityHeight = GenSingularityHeight(r) })
+
 	params := types.NewParams(
 		signedBlocksWindow, minSignedPerWindow, downtimeJailDuration,
-		slashFractionDoubleSign, slashFractionDowntime,
+		slashFractionDoubleSign, slashFractionDowntime, singularityHeight,
 	)
 
 	slashingGenesis := types.NewGenesisState(params, []types.SigningInfo{}, []types.ValidatorMissedBlocks{})
