@@ -109,13 +109,13 @@ func (k Keeper) HandleValidatorSignature(ctx context.Context, addr cryptotypes.A
 	minHeight := signInfo.StartHeight + signedBlocksWindow
 	maxMissed := signedBlocksWindow - minSignedPerWindow
 
-	params, err := k.GetParams(ctx)
+	singularityHeight, err := k.SingularityHeight(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to get params")
 	}
 
 	// if we are past the minimum height and the validator has missed too many blocks, punish them
-	if height > int64(params.SingularityHeight) && height > minHeight && signInfo.MissedBlocksCounter > maxMissed {
+	if height > int64(singularityHeight) && height > minHeight && signInfo.MissedBlocksCounter > maxMissed {
 		validator, err := k.sk.ValidatorByConsAddr(ctx, consAddr)
 		if err != nil {
 			return err
@@ -175,7 +175,7 @@ func (k Keeper) HandleValidatorSignature(ctx context.Context, addr cryptotypes.A
 				"slashed", slashFractionDowntime.String(),
 				"jailed_until", signInfo.JailedUntil,
 			)
-		} else if height == int64(params.SingularityHeight) {
+		} else if height == int64(singularityHeight) {
 			// reset the counter & bitmap so that the validator won't be
 			// immediately slashed after singularity.
 			signInfo.MissedBlocksCounter = 0

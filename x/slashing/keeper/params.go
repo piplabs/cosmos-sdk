@@ -48,6 +48,11 @@ func (k Keeper) SlashFractionDowntime(ctx context.Context) (sdkmath.LegacyDec, e
 	return params.SlashFractionDowntime, err
 }
 
+func (k Keeper) SingularityHeight(ctx context.Context) (uint64, error) {
+	params, err := k.GetParams(ctx)
+	return params.SingularityHeight, err
+}
+
 // GetParams returns the current x/slashing module parameters.
 func (k Keeper) GetParams(ctx context.Context) (params types.Params, err error) {
 	store := k.storeService.OpenKVStore(ctx)

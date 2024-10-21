@@ -34,6 +34,9 @@ type (
 		SlashFractionDoubleSign(context.Context) (math.LegacyDec, error)
 		Jail(context.Context, sdk.ConsAddress) error
 		JailUntil(context.Context, sdk.ConsAddress, time.Time) error
+
+		// For Story
+		SingularityHeight(ctx context.Context) (uint64, error)
 	}
 
 	// AccountKeeper define the account keeper interface contracted needed by the evidence module

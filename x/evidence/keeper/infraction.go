@@ -27,6 +27,17 @@ import (
 func (k Keeper) handleEquivocationEvidence(ctx context.Context, evidence *types.Equivocation) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	logger := k.Logger(ctx)
+
+	singularityHeight, err := k.slashingKeeper.SingularityHeight(ctx)
+	if err != nil {
+		return err
+	}
+
+	if sdkCtx.BlockHeight() < int64(singularityHeight) {
+		logger.Debug("skip handling evidence before singularity")
+		return nil
+	}
+
 	consAddr := evidence.GetConsensusAddress(k.stakingKeeper.ConsensusAddressCodec())
 
 	validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, consAddr)
