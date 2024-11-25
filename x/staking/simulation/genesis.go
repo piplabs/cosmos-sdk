@@ -55,15 +55,18 @@ func RandomizedGenState(simState *module.SimulationState) {
 	// NOTE: the slashing module need to be defined after the staking module on the
 	// NewSimulationManager constructor for this to work
 	simState.UnbondTime = unbondTime
-	params := types.NewParams(simState.UnbondTime, maxVals, 7, histEntries, simState.BondDenom, minCommissionRate)
+	params := types.NewParams(simState.UnbondTime, maxVals, 7, histEntries, simState.BondDenom, minCommissionRate, types.DefaultMinDelegation, types.DefaultFlexiblePeriodType, types.DefaultPeriods, types.DefaultLockedTokenType, types.DefaultTokenTypes, types.DefaultSingularityHeight)
 
 	// validators & delegations
 	var (
-		validators  []types.Validator
-		delegations []types.Delegation
+		validators        []types.Validator
+		delegations       []types.Delegation
+		periodDelegations []types.PeriodDelegation
 	)
 
 	valAddrs := make([]sdk.ValAddress, simState.NumBonded)
+
+	now := time.Now()
 
 	for i := 0; i < int(simState.NumBonded); i++ {
 		valAddr := sdk.ValAddress(simState.Accounts[i].Address)
@@ -76,7 +79,7 @@ func RandomizedGenState(simState *module.SimulationState) {
 			simulation.RandomDecAmount(simState.Rand, maxCommission),
 		)
 
-		validator, err := types.NewValidator(valAddr.String(), simState.Accounts[i].ConsKey.PubKey(), types.Description{})
+		validator, err := types.NewValidator(valAddr.String(), simState.Accounts[i].ConsKey.PubKey(), types.Description{}, 0)
 		if err != nil {
 			panic(err)
 		}
@@ -84,13 +87,25 @@ func RandomizedGenState(simState *module.SimulationState) {
 		validator.DelegatorShares = sdkmath.LegacyNewDecFromInt(simState.InitialStake)
 		validator.Commission = commission
 
-		delegation := types.NewDelegation(simState.Accounts[i].Address.String(), valAddr.String(), sdkmath.LegacyNewDecFromInt(simState.InitialStake))
+		delegation := types.NewDelegation(
+			simState.Accounts[i].Address.String(), valAddr.String(), sdkmath.LegacyNewDecFromInt(simState.InitialStake), sdkmath.LegacyNewDecFromInt(simState.InitialStake),
+		)
+		periodDelegation := types.NewPeriodDelegation(
+			simState.Accounts[i].Address.String(),
+			valAddr.String(),
+			"1",
+			sdkmath.LegacyNewDecFromInt(simState.InitialStake),
+			sdkmath.LegacyNewDecFromInt(simState.InitialStake),
+			1,
+			now.Add(time.Hour*24*30),
+		)
 
 		validators = append(validators, validator)
 		delegations = append(delegations, delegation)
+		periodDelegations = append(periodDelegations, periodDelegation)
 	}
 
-	stakingGenesis := types.NewGenesisState(params, validators, delegations)
+	stakingGenesis := types.NewGenesisState(params, validators, delegations, periodDelegations)
 
 	bz, err := json.MarshalIndent(&stakingGenesis.Params, "", " ")
 	if err != nil {

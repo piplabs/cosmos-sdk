@@ -591,9 +591,7 @@ func delegationToDelegationResponse(ctx context.Context, k *Keeper, del types.De
 	}
 
 	return types.NewDelegationResp(
-		del.DelegatorAddress,
-		del.GetValidatorAddr(),
-		del.Shares,
+		del,
 		sdk.NewCoin(bondDenom, val.TokensFromShares(del.Shares).TruncateInt()),
 	), nil
 }
@@ -639,6 +637,7 @@ func redelegationsToRedelegationResponses(ctx context.Context, k *Keeper, redels
 		entryResponses := make([]types.RedelegationEntryResponse, len(redel.Entries))
 		for j, entry := range redel.Entries {
 			entryResponses[j] = types.NewRedelegationEntryResponse(
+				entry.PeriodDelegationId,
 				entry.CreationHeight,
 				entry.CompletionTime,
 				entry.SharesDst,

@@ -310,6 +310,7 @@ func initTestnetFiles(
 			stakingtypes.NewDescription(nodeDirName, "", "", "", ""),
 			stakingtypes.NewCommissionRates(math.LegacyOneDec(), math.LegacyOneDec(), math.LegacyOneDec()),
 			math.OneInt(),
+			0,
 		)
 		if err != nil {
 			return err

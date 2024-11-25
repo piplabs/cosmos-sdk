@@ -61,6 +61,9 @@ type StakingKeeper interface {
 
 	// IsValidatorJailed returns if the validator is jailed.
 	IsValidatorJailed(ctx context.Context, addr sdk.ConsAddress) (bool, error)
+
+	// For Story
+	GetSingularityHeight(ctx context.Context) (uint64, error)
 }
 
 // StakingHooks event hooks for staking validator object (noalias)

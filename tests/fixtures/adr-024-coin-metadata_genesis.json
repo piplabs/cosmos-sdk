@@ -167,13 +167,14 @@
     },
     "distribution": {
       "params": {
-        "community_tax": "0.020000000000000000",
+        "ubi": "0.020000000000000000",
         "base_proposer_reward": "0.000000000000000000",
         "bonus_proposer_reward": "0.000000000000000000",
-        "withdraw_addr_enabled": true
+        "withdraw_addr_enabled": true,
+        "max_ubi": "0.200000000000000000"
       },
       "fee_pool": {
-        "community_pool": []
+        "ubi": []
       },
       "delegator_withdraw_infos": [],
       "previous_proposer": "",
@@ -201,7 +202,42 @@
         "max_validators": 100,
         "max_entries": 7,
         "historical_entries": 100,
-        "bond_denom": "stake"
+        "bond_denom": "stake",
+        "min_delegation": "1",
+        "flexible_period_type": 0,
+        "periods":[
+          {
+            "period_type": 0,
+            "duration": "0s",
+            "rewards_multiplier": "1"
+          },
+          {
+            "period_type": 1,
+            "duration": "2592000s",
+            "rewards_multiplier": "1.051"
+          },
+          {
+            "period_type": 2,
+            "duration": "31536000s",
+            "rewards_multiplier": "1.16"
+          },
+          {
+            "period_type": 3,
+            "duration": "46656000s",
+            "rewards_multiplier": "1.34"
+          }
+        ],
+        "locked_token_type": 0,
+        "token_types":[
+          {
+            "token_type": 0,
+            "rewards_multiplier": "0.5"
+          },
+          {
+            "token_type": 1,
+            "rewards_multiplier": "1"
+          }
+        ]
       },
       "last_total_power": "0",
       "last_validator_powers": null,

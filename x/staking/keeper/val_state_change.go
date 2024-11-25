@@ -18,7 +18,7 @@ import (
 
 // BlockValidatorUpdates calculates the ValidatorUpdates for the current block
 // Called in each EndBlock
-func (k Keeper) BlockValidatorUpdates(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+func (k Keeper) BlockValidatorUpdates(ctx context.Context) ([]abci.ValidatorUpdate, []types.UnbondedEntry, error) {
 	// Calculate validator set changes.
 	//
 	// NOTE: ApplyAndReturnValidatorSetUpdates has to come before
@@ -30,36 +30,45 @@ func (k Keeper) BlockValidatorUpdates(ctx context.Context) ([]abci.ValidatorUpda
 	// UnbondAllMatureValidatorQueue).
 	validatorUpdates, err := k.ApplyAndReturnValidatorSetUpdates(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// unbond all mature validators from the unbonding queue
 	err = k.UnbondAllMatureValidators(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	// Remove all mature unbonding delegations from the ubd queue.
 	matureUnbonds, err := k.DequeueAllMatureUBDQueue(ctx, sdkCtx.BlockHeader().Time)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	var unbondedEntries []types.UnbondedEntry
 
 	for _, dvPair := range matureUnbonds {
 		addr, err := k.validatorAddressCodec.StringToBytes(dvPair.ValidatorAddress)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		delegatorAddress, err := k.authKeeper.AddressCodec().StringToBytes(dvPair.DelegatorAddress)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		balances, err := k.CompleteUnbonding(ctx, delegatorAddress, addr)
+		balances, unbondedEntry, err := k.CompleteUnbonding(ctx, delegatorAddress, addr)
 		if err != nil {
+			k.Logger(ctx).Error(
+				"failed to complete unbonding",
+				"error", err,
+				"val_addr", string(addr),
+				"del_addr", string(delegatorAddress))
 			continue
 		}
+
+		unbondedEntries = append(unbondedEntries, *unbondedEntry)
 
 		sdkCtx.EventManager().EmitEvent(
 			sdk.NewEvent(
@@ -74,21 +83,21 @@ func (k Keeper) BlockValidatorUpdates(ctx context.Context) ([]abci.ValidatorUpda
 	// Remove all mature redelegations from the red queue.
 	matureRedelegations, err := k.DequeueAllMatureRedelegationQueue(ctx, sdkCtx.BlockHeader().Time)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, dvvTriplet := range matureRedelegations {
 		valSrcAddr, err := k.validatorAddressCodec.StringToBytes(dvvTriplet.ValidatorSrcAddress)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		valDstAddr, err := k.validatorAddressCodec.StringToBytes(dvvTriplet.ValidatorDstAddress)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		delegatorAddress, err := k.authKeeper.AddressCodec().StringToBytes(dvvTriplet.DelegatorAddress)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		balances, err := k.CompleteRedelegation(
@@ -98,6 +107,12 @@ func (k Keeper) BlockValidatorUpdates(ctx context.Context) ([]abci.ValidatorUpda
 			valDstAddr,
 		)
 		if err != nil {
+			k.Logger(ctx).Error(
+				"failed to complete redelegation",
+				"error", err,
+				"val_src_addr", string(valSrcAddr),
+				"val_dst_addr", string(valDstAddr),
+				"del_addr", string(delegatorAddress))
 			continue
 		}
 
@@ -112,7 +127,7 @@ func (k Keeper) BlockValidatorUpdates(ctx context.Context) ([]abci.ValidatorUpda
 		)
 	}
 
-	return validatorUpdates, nil
+	return validatorUpdates, unbondedEntries, nil
 }
 
 // ApplyAndReturnValidatorSetUpdates applies and return accumulated updates to the bonded validator set. Also,

@@ -147,7 +147,7 @@ func TestAllocateTokensToManyValidators(t *testing.T) {
 
 	feePool, err := distrKeeper.FeePool.Get(ctx)
 	require.NoError(t, err)
-	require.True(t, feePool.CommunityPool.IsZero())
+	require.True(t, feePool.Ubi.IsZero())
 
 	val0Commission, err := distrKeeper.GetValidatorAccumulatedCommission(ctx, valAddr0)
 	require.NoError(t, err)
@@ -178,7 +178,7 @@ func TestAllocateTokensToManyValidators(t *testing.T) {
 			Validator: abciValB,
 		},
 	}
-	require.NoError(t, distrKeeper.AllocateTokens(ctx, 200, votes))
+	require.NoError(t, distrKeeper.AllocateTokens(ctx, votes))
 
 	// 98 outstanding rewards (100 less 2 to community pool)
 	val0OutstandingRewards, err = distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr0)
@@ -192,7 +192,7 @@ func TestAllocateTokensToManyValidators(t *testing.T) {
 	// 2 community pool coins
 	feePool, err = distrKeeper.FeePool.Get(ctx)
 	require.NoError(t, err)
-	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: math.LegacyNewDec(2)}}, feePool.CommunityPool)
+	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: math.LegacyNewDec(2)}}, feePool.Ubi)
 
 	// 50% commission for first proposer, (0.5 * 98%) * 100 / 2 = 23.25
 	val0Commission, err = distrKeeper.GetValidatorAccumulatedCommission(ctx, valAddr0)
@@ -262,7 +262,7 @@ func TestAllocateTokensTruncation(t *testing.T) {
 
 	// create third validator with 10% commission
 	valAddr2 := sdk.ValAddress(valConsAddr2)
-	val2, err := stakingtypes.NewValidator(sdk.ValAddress(valConsAddr2).String(), valConsPk1, stakingtypes.Description{})
+	val2, err := stakingtypes.NewValidator(sdk.ValAddress(valConsAddr2).String(), valConsPk1, stakingtypes.Description{}, 0)
 	require.NoError(t, err)
 	val2.Commission = stakingtypes.NewCommission(math.LegacyNewDecWithPrec(1, 1), math.LegacyNewDecWithPrec(1, 1), math.LegacyNewDec(0))
 	stakingKeeper.EXPECT().ValidatorByConsAddr(gomock.Any(), sdk.GetConsAddress(valConsPk2)).Return(val2, nil).AnyTimes()
@@ -291,7 +291,7 @@ func TestAllocateTokensTruncation(t *testing.T) {
 
 	feePool, err := distrKeeper.FeePool.Get(ctx)
 	require.NoError(t, err)
-	require.True(t, feePool.CommunityPool.IsZero())
+	require.True(t, feePool.Ubi.IsZero())
 
 	val0Commission, err := distrKeeper.GetValidatorAccumulatedCommission(ctx, valAddr0)
 	require.NoError(t, err)
@@ -325,7 +325,7 @@ func TestAllocateTokensTruncation(t *testing.T) {
 			Validator: abciValC,
 		},
 	}
-	require.NoError(t, distrKeeper.AllocateTokens(ctx, 31, votes))
+	require.NoError(t, distrKeeper.AllocateTokens(ctx, votes))
 
 	val0OutstandingRewards, err = distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr0)
 	require.NoError(t, err)

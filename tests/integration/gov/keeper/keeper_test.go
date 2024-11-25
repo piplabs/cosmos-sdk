@@ -111,7 +111,6 @@ func initFixture(t testing.TB) *fixture {
 		accountKeeper,
 		bankKeeper,
 		stakingKeeper,
-		distrKeeper,
 		router,
 		types.DefaultConfig(),
 		authority.String(),

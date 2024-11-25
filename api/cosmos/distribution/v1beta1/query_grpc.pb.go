@@ -28,7 +28,7 @@ const (
 	Query_DelegationTotalRewards_FullMethodName      = "/cosmos.distribution.v1beta1.Query/DelegationTotalRewards"
 	Query_DelegatorValidators_FullMethodName         = "/cosmos.distribution.v1beta1.Query/DelegatorValidators"
 	Query_DelegatorWithdrawAddress_FullMethodName    = "/cosmos.distribution.v1beta1.Query/DelegatorWithdrawAddress"
-	Query_CommunityPool_FullMethodName               = "/cosmos.distribution.v1beta1.Query/CommunityPool"
+	Query_Ubi_FullMethodName                         = "/cosmos.distribution.v1beta1.Query/Ubi"
 )
 
 // QueryClient is the client API for Query service.
@@ -54,8 +54,8 @@ type QueryClient interface {
 	DelegatorValidators(ctx context.Context, in *QueryDelegatorValidatorsRequest, opts ...grpc.CallOption) (*QueryDelegatorValidatorsResponse, error)
 	// DelegatorWithdrawAddress queries withdraw address of a delegator.
 	DelegatorWithdrawAddress(ctx context.Context, in *QueryDelegatorWithdrawAddressRequest, opts ...grpc.CallOption) (*QueryDelegatorWithdrawAddressResponse, error)
-	// CommunityPool queries the community pool coins.
-	CommunityPool(ctx context.Context, in *QueryCommunityPoolRequest, opts ...grpc.CallOption) (*QueryCommunityPoolResponse, error)
+	// Ubi queries the ubi coins.
+	Ubi(ctx context.Context, in *QueryUbiRequest, opts ...grpc.CallOption) (*QueryUbiResponse, error)
 }
 
 type queryClient struct {
@@ -147,9 +147,9 @@ func (c *queryClient) DelegatorWithdrawAddress(ctx context.Context, in *QueryDel
 	return out, nil
 }
 
-func (c *queryClient) CommunityPool(ctx context.Context, in *QueryCommunityPoolRequest, opts ...grpc.CallOption) (*QueryCommunityPoolResponse, error) {
-	out := new(QueryCommunityPoolResponse)
-	err := c.cc.Invoke(ctx, Query_CommunityPool_FullMethodName, in, out, opts...)
+func (c *queryClient) Ubi(ctx context.Context, in *QueryUbiRequest, opts ...grpc.CallOption) (*QueryUbiResponse, error) {
+	out := new(QueryUbiResponse)
+	err := c.cc.Invoke(ctx, Query_Ubi_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -179,8 +179,8 @@ type QueryServer interface {
 	DelegatorValidators(context.Context, *QueryDelegatorValidatorsRequest) (*QueryDelegatorValidatorsResponse, error)
 	// DelegatorWithdrawAddress queries withdraw address of a delegator.
 	DelegatorWithdrawAddress(context.Context, *QueryDelegatorWithdrawAddressRequest) (*QueryDelegatorWithdrawAddressResponse, error)
-	// CommunityPool queries the community pool coins.
-	CommunityPool(context.Context, *QueryCommunityPoolRequest) (*QueryCommunityPoolResponse, error)
+	// Ubi queries the ubi coins.
+	Ubi(context.Context, *QueryUbiRequest) (*QueryUbiResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -215,8 +215,8 @@ func (UnimplementedQueryServer) DelegatorValidators(context.Context, *QueryDeleg
 func (UnimplementedQueryServer) DelegatorWithdrawAddress(context.Context, *QueryDelegatorWithdrawAddressRequest) (*QueryDelegatorWithdrawAddressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DelegatorWithdrawAddress not implemented")
 }
-func (UnimplementedQueryServer) CommunityPool(context.Context, *QueryCommunityPoolRequest) (*QueryCommunityPoolResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CommunityPool not implemented")
+func (UnimplementedQueryServer) Ubi(context.Context, *QueryUbiRequest) (*QueryUbiResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ubi not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -393,20 +393,20 @@ func _Query_DelegatorWithdrawAddress_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_CommunityPool_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryCommunityPoolRequest)
+func _Query_Ubi_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryUbiRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).CommunityPool(ctx, in)
+		return srv.(QueryServer).Ubi(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_CommunityPool_FullMethodName,
+		FullMethod: Query_Ubi_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).CommunityPool(ctx, req.(*QueryCommunityPoolRequest))
+		return srv.(QueryServer).Ubi(ctx, req.(*QueryUbiRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -455,8 +455,8 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_DelegatorWithdrawAddress_Handler,
 		},
 		{
-			MethodName: "CommunityPool",
-			Handler:    _Query_CommunityPool_Handler,
+			MethodName: "Ubi",
+			Handler:    _Query_Ubi_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -39,7 +39,8 @@ service Msg {
   // and delegate back to previous validator.
   //
   // Since: cosmos-sdk 0.46
-  rpc CancelUnbondingDelegation(MsgCancelUnbondingDelegation) returns (MsgCancelUnbondingDelegationResponse);
+  // Deprecated since: piplabs/v0.50.7
+  // rpc CancelUnbondingDelegation(MsgCancelUnbondingDelegation) returns (MsgCancelUnbondingDelegationResponse);
 
   // UpdateParams defines an operation for updating the x/staking module
   // parameters.
@@ -66,10 +67,11 @@ message MsgCreateValidator {
   // Deprecated: Use of Delegator Address in MsgCreateValidator is deprecated.
   // The validator address bytes and delegator address bytes refer to the same account while creating validator (defer
   // only in bech32 notation).
-  string                   delegator_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", deprecated = true];
-  string                   validator_address = 5 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
-  google.protobuf.Any      pubkey            = 6 [(cosmos_proto.accepts_interface) = "cosmos.crypto.PubKey"];
-  cosmos.base.v1beta1.Coin value             = 7 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string                   delegator_address  = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", deprecated = true];
+  string                   validator_address  = 5 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
+  google.protobuf.Any      pubkey             = 6 [(cosmos_proto.accepts_interface) = "cosmos.crypto.PubKey"];
+  cosmos.base.v1beta1.Coin value              = 7 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  int32                    support_token_type = 8 [(amino.dont_omitempty) = true];
 }
 
 // MsgCreateValidatorResponse defines the Msg/CreateValidator response type.
@@ -108,9 +110,11 @@ message MsgDelegate {
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
-  string                   delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  string                   validator_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
-  cosmos.base.v1beta1.Coin amount            = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string                   delegator_address    = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string                   validator_address    = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
+  cosmos.base.v1beta1.Coin amount               = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string                   period_delegation_id = 4 [(amino.dont_omitempty) = true];
+  int32                    period_type          = 5 [(amino.dont_omitempty) = true];
 }
 
 // MsgDelegateResponse defines the Msg/Delegate response type.
@@ -129,6 +133,7 @@ message MsgBeginRedelegate {
   string                   validator_src_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
   string                   validator_dst_address = 3 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
   cosmos.base.v1beta1.Coin amount                = 4 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string                   period_delegation_id  = 5 [(amino.dont_omitempty) = true];
 }
 
 // MsgBeginRedelegateResponse defines the Msg/BeginRedelegate response type.
@@ -146,9 +151,10 @@ message MsgUndelegate {
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
-  string                   delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  string                   validator_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
-  cosmos.base.v1beta1.Coin amount            = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string                   delegator_address    = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string                   validator_address    = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
+  cosmos.base.v1beta1.Coin amount               = 3 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  string                   period_delegation_id = 4 [(amino.dont_omitempty) = true];
 }
 
 // MsgUndelegateResponse defines the Msg/Undelegate response type.

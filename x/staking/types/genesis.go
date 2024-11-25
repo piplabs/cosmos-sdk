@@ -8,11 +8,12 @@ import (
 )
 
 // NewGenesisState creates a new GenesisState instanc e
-func NewGenesisState(params Params, validators []Validator, delegations []Delegation) *GenesisState {
+func NewGenesisState(params Params, validators []Validator, delegations []Delegation, periodDelegations []PeriodDelegation) *GenesisState {
 	return &GenesisState{
-		Params:      params,
-		Validators:  validators,
-		Delegations: delegations,
+		Params:            params,
+		Validators:        validators,
+		Delegations:       delegations,
+		PeriodDelegations: periodDelegations,
 	}
 }
 

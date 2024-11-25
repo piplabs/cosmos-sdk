@@ -34,6 +34,7 @@ import (
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -209,7 +210,10 @@ func createValidator(rt *rapid.T, f *deterministicFixture, t *testing.T) staking
 			math.LegacyNewDecWithPrec(rapid.Int64Range(0, 100).Draw(rt, "max-rate"), 2),
 			math.LegacyNewDecWithPrec(rapid.Int64Range(0, 100).Draw(rt, "max-change-rate"), 2),
 		),
-		MinSelfDelegation: math.NewInt(rapid.Int64Min(1).Draw(rt, "tokens")),
+		MinSelfDelegation:      math.NewInt(rapid.Int64Min(1).Draw(rt, "tokens")),
+		RewardsTokens:          math.LegacyNewDecFromInt(math.NewInt(rapid.Int64Min(10000).Draw(rt, "tokens"))),
+		DelegatorRewardsShares: math.LegacyNewDecWithPrec(rapid.Int64Range(1, 100).Draw(rt, "commission"), 2),
+		SupportTokenType:       0,
 	}
 }
 
@@ -241,7 +245,10 @@ func setValidator(f *deterministicFixture, t *testing.T, validator stakingtypes.
 	coins := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, validator.BondedTokens()))
 	assert.NilError(t, banktestutil.FundAccount(f.ctx, f.bankKeeper, delegatorAddress, coins))
 
-	_, err = f.stakingKeeper.Delegate(f.ctx, delegatorAddress, validator.BondedTokens(), stakingtypes.Unbonded, validator, true)
+	_, _, err = f.stakingKeeper.Delegate(
+		f.ctx, delegatorAddress, validator.BondedTokens(), stakingtypes.Unbonded, validator,
+		true, stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+	)
 	assert.NilError(t, err)
 }
 
@@ -272,7 +279,10 @@ func getStaticValidator(f *deterministicFixture, t *testing.T) stakingtypes.Vali
 			math.LegacyNewDecWithPrec(5, 2),
 			math.LegacyNewDecWithPrec(5, 2),
 		),
-		MinSelfDelegation: math.NewInt(10),
+		MinSelfDelegation:      math.NewInt(10),
+		RewardsTokens:          math.LegacyNewDecFromInt(math.NewInt(100)),
+		DelegatorRewardsShares: math.LegacyNewDecWithPrec(5, 2),
+		SupportTokenType:       0,
 	}
 
 	setValidator(f, t, validator)
@@ -306,7 +316,10 @@ func getStaticValidator2(f *deterministicFixture, t *testing.T) stakingtypes.Val
 			math.LegacyNewDecWithPrec(59, 2),
 			math.LegacyNewDecWithPrec(51, 2),
 		),
-		MinSelfDelegation: math.NewInt(1),
+		MinSelfDelegation:      math.NewInt(1),
+		RewardsTokens:          math.LegacyNewDecFromInt(math.NewInt(10012)),
+		DelegatorRewardsShares: math.LegacyNewDecWithPrec(96, 2),
+		SupportTokenType:       0,
 	}
 	setValidator(f, t, validator)
 
@@ -326,7 +339,10 @@ func fundAccountAndDelegate(f *deterministicFixture, t *testing.T, delegator sdk
 	assert.NilError(t, f.bankKeeper.MintCoins(f.ctx, minttypes.ModuleName, coins))
 	assert.NilError(t, banktestutil.FundAccount(f.ctx, f.bankKeeper, delegator, coins))
 
-	shares, err := f.stakingKeeper.Delegate(f.ctx, delegator, amt, stakingtypes.Unbonded, validator, true)
+	shares, _, err := f.stakingKeeper.Delegate(
+		f.ctx, delegator, amt, stakingtypes.Unbonded, validator,
+		true, stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+	)
 	return shares, err
 }
 
@@ -431,7 +447,7 @@ func TestGRPCValidatorUnbondingDelegations(t *testing.T) {
 			assert.NilError(t, err)
 			valbz, err := f.stakingKeeper.ValidatorAddressCodec().StringToBytes(validator.GetOperator())
 			assert.NilError(t, err)
-			_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegator, valbz, shares)
+			_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegator, valbz, stakingtypes.FlexiblePeriodDelegationID, shares)
 			assert.NilError(t, err)
 		}
 
@@ -449,13 +465,13 @@ func TestGRPCValidatorUnbondingDelegations(t *testing.T) {
 	shares1, err := fundAccountAndDelegate(f, t, delegatorAddr1, validator, f.amt1)
 	assert.NilError(t, err)
 
-	_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegatorAddr1, validatorAddr1, shares1)
+	_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegatorAddr1, validatorAddr1, types.FlexiblePeriodDelegationID, shares1)
 	assert.NilError(t, err)
 
 	shares2, err := fundAccountAndDelegate(f, t, delegatorAddr2, validator, f.amt2)
 	assert.NilError(t, err)
 
-	_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegatorAddr2, validatorAddr1, shares2)
+	_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegatorAddr2, validatorAddr1, types.FlexiblePeriodDelegationID, shares2)
 	assert.NilError(t, err)
 
 	req := &stakingtypes.QueryValidatorUnbondingDelegationsRequest{
@@ -509,7 +525,7 @@ func TestGRPCUnbondingDelegation(t *testing.T) {
 
 		valbz, err := f.stakingKeeper.ValidatorAddressCodec().StringToBytes(validator.GetOperator())
 		assert.NilError(t, err)
-		_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegator, valbz, shares)
+		_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegator, valbz, types.FlexiblePeriodDelegationID, shares)
 		assert.NilError(t, err)
 
 		req := &stakingtypes.QueryUnbondingDelegationRequest{
@@ -526,7 +542,7 @@ func TestGRPCUnbondingDelegation(t *testing.T) {
 	shares1, err := fundAccountAndDelegate(f, t, delegatorAddr1, validator, f.amt1)
 	assert.NilError(t, err)
 
-	_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegatorAddr1, validatorAddr1, shares1)
+	_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegatorAddr1, validatorAddr1, types.FlexiblePeriodDelegationID, shares1)
 	assert.NilError(t, err)
 
 	req := &stakingtypes.QueryUnbondingDelegationRequest{
@@ -620,7 +636,7 @@ func TestGRPCDelegatorUnbondingDelegations(t *testing.T) {
 			assert.NilError(t, err)
 			valbz, err := f.stakingKeeper.ValidatorAddressCodec().StringToBytes(validator.GetOperator())
 			assert.NilError(t, err)
-			_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegator, valbz, shares)
+			_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegator, valbz, types.FlexiblePeriodDelegationID, shares)
 			assert.NilError(t, err)
 		}
 
@@ -638,7 +654,7 @@ func TestGRPCDelegatorUnbondingDelegations(t *testing.T) {
 	shares1, err := fundAccountAndDelegate(f, t, delegatorAddr1, validator, f.amt1)
 	assert.NilError(t, err)
 
-	_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegatorAddr1, validatorAddr1, shares1)
+	_, _, err = f.stakingKeeper.Undelegate(f.ctx, delegatorAddr1, validatorAddr1, types.FlexiblePeriodDelegationID, shares1)
 	assert.NilError(t, err)
 
 	req := &stakingtypes.QueryDelegatorUnbondingDelegationsRequest{
@@ -771,7 +787,7 @@ func TestGRPCRedelegations(t *testing.T) {
 		shares, err := createDelegationAndDelegate(rt, f, t, delegator, validator)
 		assert.NilError(t, err)
 
-		_, err = f.stakingKeeper.BeginRedelegation(f.ctx, delegator, srcValAddr, dstValAddr, shares)
+		_, err = f.stakingKeeper.BeginRedelegation(f.ctx, delegator, srcValAddr, dstValAddr, stakingtypes.FlexiblePeriodDelegationID, shares)
 		assert.NilError(t, err)
 
 		var req *stakingtypes.QueryRedelegationsRequest
@@ -805,7 +821,7 @@ func TestGRPCRedelegations(t *testing.T) {
 	shares, err := fundAccountAndDelegate(f, t, delegatorAddr1, validator, f.amt1)
 	assert.NilError(t, err)
 
-	_, err = f.stakingKeeper.BeginRedelegation(f.ctx, delegatorAddr1, validatorAddr1, validatorAddr2, shares)
+	_, err = f.stakingKeeper.BeginRedelegation(f.ctx, delegatorAddr1, validatorAddr1, validatorAddr2, stakingtypes.FlexiblePeriodDelegationID, shares)
 	assert.NilError(t, err)
 
 	req := &stakingtypes.QueryRedelegationsRequest{

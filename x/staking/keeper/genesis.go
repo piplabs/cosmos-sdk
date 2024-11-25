@@ -112,6 +112,22 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) (res 
 		}
 	}
 
+	for _, periodDelegation := range data.PeriodDelegations {
+		delAddr, err := k.authKeeper.AddressCodec().StringToBytes(periodDelegation.DelegatorAddress)
+		if err != nil {
+			panic(fmt.Errorf("invalid delegator address: %s", err))
+		}
+
+		valAddr, err := k.validatorAddressCodec.StringToBytes(periodDelegation.ValidatorAddress)
+		if err != nil {
+			panic(fmt.Errorf("invalid validator address: %s", err))
+		}
+
+		if err := k.SetPeriodDelegation(ctx, delAddr, valAddr, periodDelegation); err != nil {
+			panic(err)
+		}
+	}
+
 	for _, ubd := range data.UnbondingDelegations {
 		if err := k.SetUnbondingDelegation(ctx, ubd); err != nil {
 			panic(err)
@@ -266,6 +282,11 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		panic(err)
 	}
 
+	allPeriodDelegation, err := k.GetAllPeriodDelegations(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	return &types.GenesisState{
 		Params:               params,
 		LastTotalPower:       totalPower,
@@ -275,5 +296,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		UnbondingDelegations: unbondingDelegations,
 		Redelegations:        redelegations,
 		Exported:             true,
+		PeriodDelegations:    allPeriodDelegation,
 	}
 }

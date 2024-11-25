@@ -20,6 +20,7 @@ const (
 	DowntimeJailDuration    = "downtime_jail_duration"
 	SlashFractionDoubleSign = "slash_fraction_double_sign"
 	SlashFractionDowntime   = "slash_fraction_downtime"
+	SingularityHeight       = "singularity_height"
 )
 
 // GenSignedBlocksWindow randomized SignedBlocksWindow

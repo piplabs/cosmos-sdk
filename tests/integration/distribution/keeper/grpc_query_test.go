@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"gotest.tools/v3/assert"
 
@@ -46,7 +47,7 @@ func TestGRPCParams(t *testing.T) {
 			name: "valid request",
 			malleate: func() {
 				params = types.Params{
-					CommunityTax:        math.LegacyNewDecWithPrec(3, 1),
+					Ubi:                 math.LegacyNewDecWithPrec(3, 1),
 					BaseProposerReward:  math.LegacyZeroDec(),
 					BonusProposerReward: math.LegacyZeroDec(),
 					WithdrawAddrEnabled: true,
@@ -415,20 +416,20 @@ func TestGRPCDelegatorWithdrawAddress(t *testing.T) {
 	}
 }
 
-func TestGRPCCommunityPool(t *testing.T) {
+func TestGRPCUbi(t *testing.T) {
 	t.Parallel()
 	f := initFixture(t)
 
 	assert.NilError(t, f.distrKeeper.FeePool.Set(f.sdkCtx, types.FeePool{
-		CommunityPool: sdk.NewDecCoins(sdk.DecCoin{Denom: sdk.DefaultBondDenom, Amount: math.LegacyNewDec(0)}),
+		Ubi: sdk.NewDecCoins(sdk.DecCoin{Denom: sdk.DefaultBondDenom, Amount: math.LegacyNewDec(0)}),
 	}))
 
 	qr := f.app.QueryHelper()
 	queryClient := types.NewQueryClient(qr)
 
 	var (
-		req     *types.QueryCommunityPoolRequest
-		expPool *types.QueryCommunityPoolResponse
+		req     *types.QueryUbiRequest
+		expPool *types.QueryUbiResponse
 	)
 
 	testCases := []struct {
@@ -438,8 +439,8 @@ func TestGRPCCommunityPool(t *testing.T) {
 		{
 			name: "valid request empty community pool",
 			malleate: func() {
-				req = &types.QueryCommunityPoolRequest{}
-				expPool = &types.QueryCommunityPoolResponse{}
+				req = &types.QueryUbiRequest{}
+				expPool = &types.QueryUbiResponse{}
 			},
 		},
 		{
@@ -449,11 +450,11 @@ func TestGRPCCommunityPool(t *testing.T) {
 				assert.NilError(t, f.bankKeeper.MintCoins(f.sdkCtx, types.ModuleName, amount))
 				assert.NilError(t, f.bankKeeper.SendCoinsFromModuleToAccount(f.sdkCtx, types.ModuleName, f.addr, amount))
 
-				err := f.distrKeeper.FundCommunityPool(f.sdkCtx, amount, f.addr)
+				err := f.distrKeeper.FundUbi(f.sdkCtx, amount, f.addr)
 				assert.Assert(t, err == nil)
-				req = &types.QueryCommunityPoolRequest{}
+				req = &types.QueryUbiRequest{}
 
-				expPool = &types.QueryCommunityPoolResponse{Pool: sdk.NewDecCoinsFromCoins(amount...)}
+				expPool = &types.QueryUbiResponse{Pool: sdk.NewDecCoinsFromCoins(amount...)}
 			},
 		},
 	}
@@ -463,7 +464,7 @@ func TestGRPCCommunityPool(t *testing.T) {
 		t.Run(fmt.Sprintf("Case %s", tc.name), func(t *testing.T) {
 			testCase.malleate()
 
-			pool, err := queryClient.CommunityPool(f.sdkCtx, req)
+			pool, err := queryClient.Ubi(f.sdkCtx, req)
 
 			assert.NilError(t, err)
 			assert.DeepEqual(t, expPool, pool)
@@ -476,7 +477,7 @@ func TestGRPCDelegationRewards(t *testing.T) {
 	f := initFixture(t)
 
 	assert.NilError(t, f.distrKeeper.FeePool.Set(f.sdkCtx, types.FeePool{
-		CommunityPool: sdk.NewDecCoins(sdk.DecCoin{Denom: sdk.DefaultBondDenom, Amount: math.LegacyNewDec(1000)}),
+		Ubi: sdk.NewDecCoins(sdk.DecCoin{Denom: sdk.DefaultBondDenom, Amount: math.LegacyNewDec(1000)}),
 	}))
 
 	// set module account coins
@@ -507,9 +508,20 @@ func TestGRPCDelegationRewards(t *testing.T) {
 
 	// setup delegation
 	delTokens := sdk.TokensFromConsensusPower(2, sdk.DefaultPowerReduction)
-	validator, issuedShares := val.AddTokensFromDel(delTokens)
-	delegation := stakingtypes.NewDelegation(delAddr.String(), f.valAddr.String(), issuedShares)
+	validator, issuedShares, _ := val.AddTokensFromDel(delTokens, math.LegacyOneDec())
+	delegation := stakingtypes.NewDelegation(delAddr.String(), f.valAddr.String(), issuedShares, issuedShares)
 	assert.NilError(t, f.stakingKeeper.SetDelegation(f.sdkCtx, delegation))
+	periodDel := stakingtypes.NewPeriodDelegation(
+		delAddr.String(),
+		f.valAddr.String(),
+		stakingtypes.FlexiblePeriodDelegationID,
+		issuedShares,
+		issuedShares,
+		stakingtypes.DefaultFlexiblePeriodType,
+		time.Time{},
+	)
+	assert.NilError(t, f.stakingKeeper.SetPeriodDelegation(f.sdkCtx, delAddr, f.valAddr, periodDel))
+
 	valBz, err := f.stakingKeeper.ValidatorAddressCodec().StringToBytes(validator.GetOperator())
 	assert.NilError(t, err)
 	assert.NilError(t, f.distrKeeper.SetDelegatorStartingInfo(f.sdkCtx, valBz, delAddr, types.NewDelegatorStartingInfo(2, math.LegacyNewDec(initialStake), 20)))

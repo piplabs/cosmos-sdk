@@ -14,7 +14,8 @@ const (
 	QueryDelegatorTotalRewards       = "delegator_total_rewards"
 	QueryDelegatorValidators         = "delegator_validators"
 	QueryWithdrawAddr                = "withdraw_addr"
-	QueryCommunityPool               = "community_pool"
+	QueryUbi                         = "ubi"
+	QueryMaxUbi                      = "max_ubi"
 )
 
 // params for query 'custom/distr/validator_outstanding_rewards'

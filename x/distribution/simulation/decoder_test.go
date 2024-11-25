@@ -32,7 +32,7 @@ func TestDecodeDistributionStore(t *testing.T) {
 
 	decCoins := sdk.DecCoins{sdk.NewDecCoinFromDec(sdk.DefaultBondDenom, math.LegacyOneDec())}
 	feePool := types.InitialFeePool()
-	feePool.CommunityPool = decCoins
+	feePool.Ubi = decCoins
 	info := types.NewDelegatorStartingInfo(2, math.LegacyOneDec(), 200)
 	outstanding := types.ValidatorOutstandingRewards{Rewards: decCoins}
 	commission := types.ValidatorAccumulatedCommission{Commission: decCoins}

@@ -60,7 +60,7 @@ func (h Hooks) AfterValidatorRemoved(ctx context.Context, _ sdk.ConsAddress, val
 			return err
 		}
 
-		feePool.CommunityPool = feePool.CommunityPool.Add(remainder...)
+		feePool.Ubi = feePool.Ubi.Add(remainder...)
 		err = h.k.FeePool.Set(ctx, feePool)
 		if err != nil {
 			return err
@@ -88,7 +88,7 @@ func (h Hooks) AfterValidatorRemoved(ctx context.Context, _ sdk.ConsAddress, val
 		return err
 	}
 
-	feePool.CommunityPool = feePool.CommunityPool.Add(outstanding...)
+	feePool.Ubi = feePool.Ubi.Add(outstanding...)
 	err = h.k.FeePool.Set(ctx, feePool)
 	if err != nil {
 		return err

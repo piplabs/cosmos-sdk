@@ -13,9 +13,11 @@ import (
 
 func CreateValidator(pk cryptotypes.PubKey, stake math.Int) (stakingtypes.Validator, error) {
 	valConsAddr := sdk.GetConsAddress(pk)
-	val, err := stakingtypes.NewValidator(sdk.ValAddress(valConsAddr).String(), pk, stakingtypes.Description{Moniker: "TestValidator"})
+	val, err := stakingtypes.NewValidator(sdk.ValAddress(valConsAddr).String(), pk, stakingtypes.Description{Moniker: "TestValidator"}, 0)
 	val.Tokens = stake
 	val.DelegatorShares = math.LegacyNewDecFromInt(val.Tokens)
+	val.DelegatorRewardsShares = math.LegacyNewDecFromInt(val.Tokens)
+	val.RewardsTokens = math.LegacyNewDecFromInt(stake)
 	return val, err
 }
 
@@ -97,6 +99,7 @@ func SlashValidator(
 	// Deduct from validator's bonded tokens and update the validator.
 	// Burn the slashed tokens from the pool account and decrease the total supply.
 	validator.Tokens = validator.Tokens.Sub(tokensToBurn)
+	validator.RewardsTokens = validator.RewardsTokens.Sub(math.LegacyNewDecFromInt(tokensToBurn))
 
 	return tokensToBurn
 }
@@ -125,7 +128,9 @@ func Delegate(
 		err = distrKeeper.Hooks().BeforeDelegationSharesModified(ctx, delegator, valBz)
 	} else {
 		err = distrKeeper.Hooks().BeforeDelegationCreated(ctx, delegator, valBz)
-		del := stakingtypes.NewDelegation(delegator.String(), validator.GetOperator(), math.LegacyZeroDec())
+		del := stakingtypes.NewDelegation(
+			delegator.String(), validator.GetOperator(), math.LegacyZeroDec(), math.LegacyZeroDec(),
+		)
 		delegation = &del
 	}
 
@@ -134,10 +139,11 @@ func Delegate(
 	}
 
 	// Add tokens from delegation to validator
-	updateVal, newShares := validator.AddTokensFromDel(amount)
+	updateVal, newShares, _ := validator.AddTokensFromDel(amount, math.LegacyOneDec())
 	*validator = updateVal
 
 	delegation.Shares = delegation.Shares.Add(newShares)
+	delegation.RewardsShares = delegation.RewardsShares.Add(newShares)
 
 	return newShares, *delegation, nil
 }

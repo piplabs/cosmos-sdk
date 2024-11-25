@@ -42,12 +42,49 @@ func TestMigrateJSON(t *testing.T) {
 	"last_validator_powers": [],
 	"params": {
 		"bond_denom": "stake",
+		"flexible_period_type": 0,
 		"historical_entries": 10000,
+		"locked_token_type": 0,
 		"max_entries": 7,
 		"max_validators": 100,
 		"min_commission_rate": "0.000000000000000000",
+		"min_delegation": "1",
+		"periods": [
+			{
+				"duration": "0s",
+				"period_type": 0,
+				"rewards_multiplier": "1.000000000000000000"
+			},
+			{
+				"duration": "2592000s",
+				"period_type": 1,
+				"rewards_multiplier": "1.051000000000000000"
+			},
+			{
+				"duration": "31536000s",
+				"period_type": 2,
+				"rewards_multiplier": "1.160000000000000000"
+			},
+			{
+				"duration": "46656000s",
+				"period_type": 3,
+				"rewards_multiplier": "1.340000000000000000"
+			}
+		],
+		"singularity_height": "403200",
+		"token_types": [
+			{
+				"rewards_multiplier": "0.500000000000000000",
+				"token_type": 0
+			},
+			{
+				"rewards_multiplier": "1.000000000000000000",
+				"token_type": 1
+			}
+		],
 		"unbonding_time": "1814400s"
 	},
+	"period_delegations": [],
 	"redelegations": [],
 	"unbonding_delegations": [],
 	"validators": []

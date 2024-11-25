@@ -34,12 +34,15 @@ func TestInitGenesis(t *testing.T) {
 	assert.NilError(t, err)
 
 	bondedVal := types.Validator{
-		OperatorAddress: sdk.ValAddress(addrs[0]).String(),
-		ConsensusPubkey: pk0,
-		Status:          types.Bonded,
-		Tokens:          valTokens,
-		DelegatorShares: math.LegacyNewDecFromInt(valTokens),
-		Description:     types.NewDescription("hoop", "", "", "", ""),
+		OperatorAddress:        sdk.ValAddress(addrs[0]).String(),
+		ConsensusPubkey:        pk0,
+		Status:                 types.Bonded,
+		Tokens:                 valTokens,
+		DelegatorShares:        math.LegacyNewDecFromInt(valTokens),
+		DelegatorRewardsShares: math.LegacyNewDecFromInt(valTokens),
+		Description:            types.NewDescription("hoop", "", "", "", ""),
+		SupportTokenType:       0,
+		RewardsTokens:          math.LegacyNewDecFromInt(valTokens),
 	}
 	assert.NilError(t, f.stakingKeeper.SetValidator(f.sdkCtx, bondedVal))
 
@@ -51,6 +54,7 @@ func TestInitGenesis(t *testing.T) {
 
 	assert.Assert(t, len(validators) == 1)
 	var delegations []types.Delegation
+	var periodDelegations []types.PeriodDelegation
 
 	pk1, err := codectypes.NewAnyWithValue(PKs[1])
 	assert.NilError(t, err)
@@ -60,20 +64,26 @@ func TestInitGenesis(t *testing.T) {
 
 	// initialize the validators
 	bondedVal1 := types.Validator{
-		OperatorAddress: sdk.ValAddress(addrs[1]).String(),
-		ConsensusPubkey: pk1,
-		Status:          types.Bonded,
-		Tokens:          valTokens,
-		DelegatorShares: math.LegacyNewDecFromInt(valTokens),
-		Description:     types.NewDescription("hoop", "", "", "", ""),
+		OperatorAddress:        sdk.ValAddress(addrs[1]).String(),
+		ConsensusPubkey:        pk1,
+		Status:                 types.Bonded,
+		Tokens:                 valTokens,
+		DelegatorShares:        math.LegacyNewDecFromInt(valTokens),
+		DelegatorRewardsShares: math.LegacyNewDecFromInt(valTokens),
+		Description:            types.NewDescription("hoop", "", "", "", ""),
+		SupportTokenType:       0,
+		RewardsTokens:          math.LegacyNewDecFromInt(valTokens),
 	}
 	bondedVal2 := types.Validator{
-		OperatorAddress: sdk.ValAddress(addrs[2]).String(),
-		ConsensusPubkey: pk2,
-		Status:          types.Bonded,
-		Tokens:          valTokens,
-		DelegatorShares: math.LegacyNewDecFromInt(valTokens),
-		Description:     types.NewDescription("bloop", "", "", "", ""),
+		OperatorAddress:        sdk.ValAddress(addrs[2]).String(),
+		ConsensusPubkey:        pk2,
+		Status:                 types.Bonded,
+		Tokens:                 valTokens,
+		DelegatorShares:        math.LegacyNewDecFromInt(valTokens),
+		DelegatorRewardsShares: math.LegacyNewDecFromInt(valTokens),
+		Description:            types.NewDescription("bloop", "", "", "", ""),
+		SupportTokenType:       0,
+		RewardsTokens:          math.LegacyNewDecFromInt(valTokens),
 	}
 
 	// append new bonded validators to the list
@@ -94,9 +104,12 @@ func TestInitGenesis(t *testing.T) {
 
 	genesisDelegations, err := f.stakingKeeper.GetAllDelegations(f.sdkCtx)
 	assert.NilError(t, err)
+	genesisPeriodDelegations, err := f.stakingKeeper.GetAllPeriodDelegations(f.sdkCtx)
+	assert.NilError(t, err)
 	delegations = append(delegations, genesisDelegations...)
+	periodDelegations = append(periodDelegations, genesisPeriodDelegations...)
 
-	genesisState := types.NewGenesisState(params, validators, delegations)
+	genesisState := types.NewGenesisState(params, validators, delegations, periodDelegations)
 	vals := (f.stakingKeeper.InitGenesis(f.sdkCtx, genesisState))
 
 	actualGenesis := (f.stakingKeeper.ExportGenesis(f.sdkCtx))
@@ -141,12 +154,15 @@ func TestInitGenesis_PoolsBalanceMismatch(t *testing.T) {
 	assert.NilError(t, err)
 
 	validator := types.Validator{
-		OperatorAddress: sdk.ValAddress("12345678901234567890").String(),
-		ConsensusPubkey: consPub,
-		Jailed:          false,
-		Tokens:          math.NewInt(10),
-		DelegatorShares: math.LegacyNewDecFromInt(math.NewInt(10)),
-		Description:     types.NewDescription("bloop", "", "", "", ""),
+		OperatorAddress:        sdk.ValAddress("12345678901234567890").String(),
+		ConsensusPubkey:        consPub,
+		Jailed:                 false,
+		Tokens:                 math.NewInt(10),
+		DelegatorShares:        math.LegacyNewDecFromInt(math.NewInt(10)),
+		DelegatorRewardsShares: math.LegacyNewDecFromInt(math.NewInt(10)),
+		Description:            types.NewDescription("bloop", "", "", "", ""),
+		SupportTokenType:       0,
+		RewardsTokens:          math.LegacyNewDecFromInt(math.NewInt(10)),
 	}
 
 	params := types.Params{
@@ -190,6 +206,7 @@ func TestInitGenesisLargeValidatorSet(t *testing.T) {
 	params, err := f.stakingKeeper.GetParams(f.sdkCtx)
 	assert.NilError(t, err)
 	delegations := []types.Delegation{}
+	periodDelegations := []types.PeriodDelegation{}
 	validators := make([]types.Validator, size)
 
 	bondedPoolAmt := math.ZeroInt()
@@ -198,6 +215,7 @@ func TestInitGenesisLargeValidatorSet(t *testing.T) {
 			sdk.ValAddress(addrs[i]).String(),
 			PKs[i],
 			types.NewDescription(fmt.Sprintf("#%d", i), "", "", "", ""),
+			0,
 		)
 		assert.NilError(t, err)
 		validators[i].Status = types.Bonded
@@ -215,7 +233,7 @@ func TestInitGenesisLargeValidatorSet(t *testing.T) {
 	}
 
 	validators = append(validators, genesisValidators...)
-	genesisState := types.NewGenesisState(params, validators, delegations)
+	genesisState := types.NewGenesisState(params, validators, delegations, periodDelegations)
 
 	// mint coins in the bonded pool representing the validators coins
 	assert.NilError(t,

@@ -1,21 +1,6 @@
 package keeper_test
 
-import (
-	"testing"
-	"time"
-
-	"gotest.tools/v3/assert"
-
-	"cosmossdk.io/math"
-
-	"github.com/cosmos/cosmos-sdk/codec/address"
-	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank/testutil"
-	"github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	"github.com/cosmos/cosmos-sdk/x/staking/types"
-)
-
+/* Deprecated since piplabs/v0.50.7
 func TestCancelUnbondingDelegation(t *testing.T) {
 	t.Parallel()
 	f := initFixture(t)
@@ -41,7 +26,10 @@ func TestCancelUnbondingDelegation(t *testing.T) {
 	delegatorAddr := addrs[1]
 
 	// setup a new validator with bonded status
-	validator, err := types.NewValidator(valAddr.String(), PKs[0], types.NewDescription("Validator", "", "", "", ""))
+	validator, err := types.NewValidator(
+		valAddr.String(), PKs[0], types.NewDescription("Validator", "", "", "", ""),
+		types.TokenType_LOCKED,
+	)
 	validator.Status = types.Bonded
 	assert.NilError(t, err)
 	assert.NilError(t, f.stakingKeeper.SetValidator(ctx, validator))
@@ -173,3 +161,4 @@ func TestCancelUnbondingDelegation(t *testing.T) {
 		})
 	}
 }
+*/

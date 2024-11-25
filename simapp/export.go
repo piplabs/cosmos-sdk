@@ -131,7 +131,7 @@ func (app *SimApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []
 		if err != nil {
 			panic(err)
 		}
-		feePool.CommunityPool = feePool.CommunityPool.Add(scraps...)
+		feePool.Ubi = feePool.Ubi.Add(scraps...)
 		if err := app.DistrKeeper.FeePool.Set(ctx, feePool); err != nil {
 			panic(err)
 		}

@@ -59,7 +59,7 @@ func SetupUnbondingTests(t *testing.T, f *fixture, hookCalled *bool, ubdeID *uin
 
 	// Create a validator
 	validator1 := testutil.NewValidator(t, addrVals[0], PKs[0])
-	validator1, issuedShares1 := validator1.AddTokensFromDel(valTokens)
+	validator1, issuedShares1, _ := validator1.AddTokensFromDel(valTokens, math.LegacyOneDec())
 	assert.DeepEqual(t, valTokens, issuedShares1.RoundInt())
 
 	validator1 = stakingkeeper.TestingUpdateValidator(f.stakingKeeper, f.sdkCtx, validator1, true)
@@ -67,12 +67,23 @@ func SetupUnbondingTests(t *testing.T, f *fixture, hookCalled *bool, ubdeID *uin
 	assert.Assert(t, validator1.IsBonded())
 
 	// Create a delegator
-	delegation := types.NewDelegation(addrDels[0].String(), addrVals[0].String(), issuedShares1)
+	delegation := types.NewDelegation(
+		addrDels[0].String(), addrVals[0].String(), issuedShares1, issuedShares1)
 	assert.NilError(t, f.stakingKeeper.SetDelegation(f.sdkCtx, delegation))
+	periodDel := types.NewPeriodDelegation(
+		addrDels[0].String(),
+		addrVals[0].String(),
+		types.FlexiblePeriodDelegationID,
+		issuedShares1,
+		issuedShares1,
+		types.DefaultFlexiblePeriodType,
+		time.Time{},
+	)
+	assert.NilError(t, f.stakingKeeper.SetPeriodDelegation(f.sdkCtx, addrDels[0], addrVals[0], periodDel))
 
 	// Create a validator to redelegate to
 	validator2 := testutil.NewValidator(t, addrVals[1], PKs[1])
-	validator2, issuedShares2 := validator2.AddTokensFromDel(valTokens)
+	validator2, issuedShares2, _ := validator2.AddTokensFromDel(valTokens, math.LegacyOneDec())
 	assert.DeepEqual(t, valTokens, issuedShares2.RoundInt())
 
 	validator2 = stakingkeeper.TestingUpdateValidator(f.stakingKeeper, f.sdkCtx, validator2, true)
@@ -99,7 +110,7 @@ func doUnbondingDelegation(
 
 	var err error
 	undelegateAmount := math.LegacyNewDec(1)
-	completionTime, undelegatedAmount, err := stakingKeeper.Undelegate(ctx, addrDels[0], addrVals[0], undelegateAmount)
+	completionTime, undelegatedAmount, err := stakingKeeper.Undelegate(ctx, addrDels[0], addrVals[0], types.FlexiblePeriodDelegationID, undelegateAmount)
 	assert.NilError(t, err)
 	assert.Assert(t, undelegateAmount.Equal(math.LegacyNewDecFromInt(undelegatedAmount)))
 	// check that the unbonding actually happened
@@ -130,7 +141,7 @@ func doRedelegation(
 	hookCalled *bool,
 ) (completionTime time.Time) {
 	var err error
-	completionTime, err = stakingKeeper.BeginRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1], math.LegacyNewDec(1))
+	completionTime, err = stakingKeeper.BeginRedelegation(ctx, addrDels[0], addrVals[0], addrVals[1], types.FlexiblePeriodDelegationID, math.LegacyNewDec(1))
 	assert.NilError(t, err)
 
 	// Check that the redelegation happened- we look up the entry and see that it has the correct number of shares
@@ -394,7 +405,7 @@ func TestUnbondingDelegationOnHold1(t *testing.T) {
 
 	// PROVIDER CHAIN'S UNBONDING PERIOD ENDS - STOPPED UNBONDING CAN NOW COMPLETE
 	f.sdkCtx = f.sdkCtx.WithBlockTime(completionTime)
-	_, err = f.stakingKeeper.CompleteUnbonding(f.sdkCtx, addrDels[0], addrVals[0])
+	_, _, err = f.stakingKeeper.CompleteUnbonding(f.sdkCtx, addrDels[0], addrVals[0])
 	assert.NilError(t, err)
 
 	// Check that the unbonding was finally completed
@@ -421,7 +432,7 @@ func TestUnbondingDelegationOnHold2(t *testing.T) {
 
 	// PROVIDER CHAIN'S UNBONDING PERIOD ENDS - BUT UNBONDING CANNOT COMPLETE
 	f.sdkCtx = f.sdkCtx.WithBlockTime(completionTime)
-	_, err := f.stakingKeeper.CompleteUnbonding(f.sdkCtx, addrDels[0], addrVals[0])
+	_, _, err := f.stakingKeeper.CompleteUnbonding(f.sdkCtx, addrDels[0], addrVals[0])
 	assert.NilError(t, err)
 
 	bondedAmt3 := f.bankKeeper.GetBalance(f.sdkCtx, f.stakingKeeper.GetBondedPool(f.sdkCtx).GetAddress(), bondDenom).Amount

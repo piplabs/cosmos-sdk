@@ -28,7 +28,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.T().Log("setting up integration test suite")
 
 	cfg, err := network.DefaultConfigWithAppConfig(network.MinimumAppConfig())
-
 	s.NoError(err)
 
 	s.network, err = network.New(s.T(), s.T().TempDir(), cfg)

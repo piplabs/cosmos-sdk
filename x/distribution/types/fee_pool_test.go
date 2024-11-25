@@ -15,6 +15,6 @@ func TestValidateGenesis(t *testing.T) {
 	fp := types.InitialFeePool()
 	require.Nil(t, fp.ValidateGenesis())
 
-	fp2 := types.FeePool{CommunityPool: sdk.DecCoins{{Denom: "stake", Amount: math.LegacyNewDec(-1)}}}
+	fp2 := types.FeePool{Ubi: sdk.DecCoins{{Denom: "stake", Amount: math.LegacyNewDec(-1)}}}
 	require.NotNil(t, fp2.ValidateGenesis())
 }

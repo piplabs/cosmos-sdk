@@ -22,9 +22,9 @@ var header = cmtproto.Header{
 
 func createValidators(t *testing.T) []types.Validator {
 	return []types.Validator{
-		newValidator(t, valAddr1, pk1),
-		newValidator(t, valAddr2, pk2),
-		newValidator(t, valAddr3, pk3),
+		newValidator(t, valAddr1, pk1, 0),
+		newValidator(t, valAddr2, pk2, 0),
+		newValidator(t, valAddr3, pk3, 0),
 	}
 }
 

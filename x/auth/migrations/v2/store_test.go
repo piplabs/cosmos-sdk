@@ -108,11 +108,20 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -135,7 +144,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -158,11 +170,20 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -183,7 +204,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -204,11 +228,20 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -229,11 +262,20 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(100), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -254,7 +296,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -277,7 +322,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -302,7 +350,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -327,7 +378,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -352,7 +406,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -383,7 +440,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 
 				accountKeeper.SetAccount(ctx, account)
 
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(150), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(150), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -430,7 +490,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
 				// delegation of the original vesting
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(3666666670000), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(3666666670000), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -479,7 +542,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
 				// delegation of the original vesting
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(3666666670000), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(3666666670000), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -528,7 +594,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
 				// delegation of the original vesting
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(3666666670000), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(3666666670000), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -577,7 +646,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
 				// delegation of the original vesting
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(3666666670000), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(3666666670000), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -600,7 +672,10 @@ func TestMigrateVestingAccounts(t *testing.T) {
 				accountKeeper.SetAccount(ctx, delayedAccount)
 
 				// delegation of the original vesting
-				_, err = stakingKeeper.Delegate(ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true)
+				_, _, err = stakingKeeper.Delegate(
+					ctx, delegatorAddr, sdkmath.NewInt(300), stakingtypes.Unbonded, validator, true,
+					stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+				)
 				require.NoError(t, err)
 
 				ctx = ctx.WithBlockTime(ctx.BlockTime().AddDate(1, 0, 0))
@@ -609,7 +684,7 @@ func TestMigrateVestingAccounts(t *testing.T) {
 				require.NoError(t, err)
 
 				// un-delegation of the original vesting
-				_, _, err = stakingKeeper.Undelegate(ctx, delegatorAddr, valAddr, sdkmath.LegacyNewDecFromInt(sdkmath.NewInt(300)))
+				_, _, err = stakingKeeper.Undelegate(ctx, delegatorAddr, valAddr, stakingtypes.FlexiblePeriodDelegationID, sdkmath.LegacyNewDecFromInt(sdkmath.NewInt(300)))
 				require.NoError(t, err)
 			},
 			cleartTrackingFields,
@@ -774,14 +849,17 @@ func createValidator(t *testing.T, ctx sdk.Context, bankKeeper bankkeeper.Keeper
 	valAddrs := simtestutil.ConvertAddrsToValAddrs(addrs)
 	pks := simtestutil.CreateTestPubKeys(1)
 
-	val1, err := stakingtypes.NewValidator(valAddrs[0].String(), pks[0], stakingtypes.Description{})
+	val1, err := stakingtypes.NewValidator(valAddrs[0].String(), pks[0], stakingtypes.Description{}, 0)
 	require.NoError(t, err)
 
 	stakingKeeper.SetValidator(ctx, val1)
 	require.NoError(t, stakingKeeper.SetValidatorByConsAddr(ctx, val1))
 	stakingKeeper.SetNewValidatorByPowerIndex(ctx, val1)
 
-	_, err = stakingKeeper.Delegate(ctx, addrs[0], valTokens, stakingtypes.Unbonded, val1, true)
+	_, _, err = stakingKeeper.Delegate(
+		ctx, addrs[0], valTokens, stakingtypes.Unbonded, val1, true,
+		stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+	)
 	require.NoError(t, err)
 
 	stakingKeeper.EndBlocker(ctx)

@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"testing"
+	"time"
 
 	cmtabcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/proto/tendermint/types"
@@ -169,7 +170,7 @@ func TestMsgWithdrawDelegatorReward(t *testing.T) {
 	f := initFixture(t)
 
 	err := f.distrKeeper.FeePool.Set(f.sdkCtx, distrtypes.FeePool{
-		CommunityPool: sdk.NewDecCoins(sdk.DecCoin{Denom: "stake", Amount: math.LegacyNewDec(10000)}),
+		Ubi: sdk.NewDecCoins(sdk.DecCoin{Denom: "stake", Amount: math.LegacyNewDec(10000)}),
 	})
 	require.NoError(t, err)
 	require.NoError(t, f.distrKeeper.Params.Set(f.sdkCtx, distrtypes.DefaultParams()))
@@ -185,7 +186,7 @@ func TestMsgWithdrawDelegatorReward(t *testing.T) {
 	}
 
 	// setup staking validator
-	validator, err := stakingtypes.NewValidator(f.valAddr.String(), PKS[0], stakingtypes.Description{})
+	validator, err := stakingtypes.NewValidator(f.valAddr.String(), PKS[0], stakingtypes.Description{}, 0)
 	assert.NilError(t, err)
 	commission := stakingtypes.NewCommission(math.LegacyZeroDec(), math.LegacyOneDec(), math.LegacyOneDec())
 	validator, err = validator.SetInitialCommission(commission)
@@ -206,12 +207,22 @@ func TestMsgWithdrawDelegatorReward(t *testing.T) {
 
 	// setup delegation
 	delTokens := sdk.TokensFromConsensusPower(2, sdk.DefaultPowerReduction)
-	validator, issuedShares := validator.AddTokensFromDel(delTokens)
+	validator, issuedShares, _ := validator.AddTokensFromDel(delTokens, math.LegacyOneDec())
 
 	valBz, err := f.stakingKeeper.ValidatorAddressCodec().StringToBytes(validator.GetOperator())
 	require.NoError(t, err)
-	delegation := stakingtypes.NewDelegation(delAddr.String(), validator.GetOperator(), issuedShares)
+	delegation := stakingtypes.NewDelegation(delAddr.String(), validator.GetOperator(), issuedShares, issuedShares)
 	require.NoError(t, f.stakingKeeper.SetDelegation(f.sdkCtx, delegation))
+	periodDel := stakingtypes.NewPeriodDelegation(
+		delAddr.String(),
+		validator.GetOperator(),
+		stakingtypes.FlexiblePeriodDelegationID,
+		issuedShares,
+		issuedShares,
+		stakingtypes.DefaultFlexiblePeriodType,
+		time.Time{},
+	)
+	assert.NilError(t, f.stakingKeeper.SetPeriodDelegation(f.sdkCtx, delAddr, f.valAddr, periodDel))
 	require.NoError(t, f.distrKeeper.SetDelegatorStartingInfo(f.sdkCtx, valBz, delAddr, distrtypes.NewDelegatorStartingInfo(2, math.LegacyOneDec(), 20)))
 	// setup validator rewards
 	decCoins := sdk.DecCoins{sdk.NewDecCoinFromDec(sdk.DefaultBondDenom, math.LegacyOneDec())}
@@ -323,7 +334,7 @@ func TestMsgWithdrawDelegatorReward(t *testing.T) {
 
 				// check rewards
 				curFeePool, _ := f.distrKeeper.FeePool.Get(f.sdkCtx)
-				rewards := curFeePool.GetCommunityPool().Sub(initFeePool.CommunityPool)
+				rewards := curFeePool.GetUbi().Sub(initFeePool.Ubi)
 				curOutstandingRewards, _ := f.distrKeeper.GetValidatorOutstandingRewards(f.sdkCtx, f.valAddr)
 				assert.DeepEqual(t, rewards, initOutstandingRewards.Sub(curOutstandingRewards.Rewards))
 			}
@@ -575,105 +586,12 @@ func TestMsgWithdrawValidatorCommission(t *testing.T) {
 	}
 }
 
-func TestMsgFundCommunityPool(t *testing.T) {
-	t.Parallel()
-	f := initFixture(t)
-
-	// reset fee pool
-	initPool := distrtypes.InitialFeePool()
-	require.NoError(t, f.distrKeeper.FeePool.Set(f.sdkCtx, initPool))
-
-	initTokens := f.stakingKeeper.TokensFromConsensusPower(f.sdkCtx, int64(100))
-	err := f.bankKeeper.MintCoins(f.sdkCtx, distrtypes.ModuleName, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens)))
-	require.NoError(t, err)
-
-	addr := sdk.AccAddress(PKS[0].Address())
-	addr2 := sdk.AccAddress(PKS[1].Address())
-	amount := sdk.NewCoins(sdk.NewInt64Coin("stake", 100))
-
-	// fund the account by minting and sending amount from distribution module to addr
-	err = f.bankKeeper.MintCoins(f.sdkCtx, distrtypes.ModuleName, amount)
-	assert.NilError(t, err)
-	err = f.bankKeeper.SendCoinsFromModuleToAccount(f.sdkCtx, distrtypes.ModuleName, addr, amount)
-	assert.NilError(t, err)
-
-	testCases := []struct {
-		name      string
-		msg       *distrtypes.MsgFundCommunityPool
-		expErr    bool
-		expErrMsg string
-	}{
-		{
-			name: "no depositor address",
-			msg: &distrtypes.MsgFundCommunityPool{
-				Amount:    sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
-				Depositor: emptyDelAddr.String(),
-			},
-			expErr:    true,
-			expErrMsg: "invalid depositor address",
-		},
-		{
-			name: "invalid coin",
-			msg: &distrtypes.MsgFundCommunityPool{
-				Amount:    sdk.Coins{sdk.NewInt64Coin("stake", 10), sdk.NewInt64Coin("stake", 10)},
-				Depositor: addr.String(),
-			},
-			expErr:    true,
-			expErrMsg: "10stake,10stake: invalid coins",
-		},
-		{
-			name: "depositor address with no funds",
-			msg: &distrtypes.MsgFundCommunityPool{
-				Amount:    sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
-				Depositor: addr2.String(),
-			},
-			expErr:    true,
-			expErrMsg: "insufficient funds",
-		},
-		{
-			name: "valid message",
-			msg: &distrtypes.MsgFundCommunityPool{
-				Amount:    sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
-				Depositor: addr.String(),
-			},
-			expErr: false,
-		},
-	}
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			res, err := f.app.RunMsg(
-				tc.msg,
-				integration.WithAutomaticFinalizeBlock(),
-				integration.WithAutomaticCommit(),
-			)
-			if tc.expErr {
-				assert.ErrorContains(t, err, tc.expErrMsg)
-			} else {
-				assert.NilError(t, err)
-				assert.Assert(t, res != nil)
-
-				// check the result
-				result := distrtypes.MsgFundCommunityPool{}
-				err = f.cdc.Unmarshal(res.Value, &result)
-				assert.NilError(t, err)
-
-				// query the community pool funds
-				feePool, err := f.distrKeeper.FeePool.Get(f.sdkCtx)
-				require.NoError(t, err)
-				assert.DeepEqual(t, initPool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(amount...)...), feePool.CommunityPool)
-				assert.Assert(t, f.bankKeeper.GetAllBalances(f.sdkCtx, addr).Empty())
-			}
-		})
-	}
-}
-
 func TestMsgUpdateParams(t *testing.T) {
 	t.Parallel()
 	f := initFixture(t)
 
 	// default params
-	communityTax := math.LegacyNewDecWithPrec(2, 2) // 2%
+	ubi := math.LegacyNewDecWithPrec(2, 2) // 2%
 	withdrawAddrEnabled := true
 
 	testCases := []struct {
@@ -687,7 +605,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			msg: &distrtypes.MsgUpdateParams{
 				Authority: "invalid",
 				Params: distrtypes.Params{
-					CommunityTax:        math.LegacyNewDecWithPrec(2, 0),
+					Ubi:                 math.LegacyNewDecWithPrec(2, 0),
 					WithdrawAddrEnabled: withdrawAddrEnabled,
 					BaseProposerReward:  math.LegacyZeroDec(),
 					BonusProposerReward: math.LegacyZeroDec(),
@@ -697,53 +615,53 @@ func TestMsgUpdateParams(t *testing.T) {
 			expErrMsg: "invalid authority",
 		},
 		{
-			name: "community tax is nil",
+			name: "ubi pool is nil",
 			msg: &distrtypes.MsgUpdateParams{
 				Authority: f.distrKeeper.GetAuthority(),
 				Params: distrtypes.Params{
-					CommunityTax:        math.LegacyDec{},
+					Ubi:                 math.LegacyDec{},
 					WithdrawAddrEnabled: withdrawAddrEnabled,
 					BaseProposerReward:  math.LegacyZeroDec(),
 					BonusProposerReward: math.LegacyZeroDec(),
 				},
 			},
 			expErr:    true,
-			expErrMsg: "community tax must be not nil",
+			expErrMsg: "ubi pool must be not nil",
 		},
 		{
-			name: "community tax > 1",
+			name: "ubi pool > 1",
 			msg: &distrtypes.MsgUpdateParams{
 				Authority: f.distrKeeper.GetAuthority(),
 				Params: distrtypes.Params{
-					CommunityTax:        math.LegacyNewDecWithPrec(2, 0),
+					Ubi:                 math.LegacyNewDecWithPrec(2, 0),
 					WithdrawAddrEnabled: withdrawAddrEnabled,
 					BaseProposerReward:  math.LegacyZeroDec(),
 					BonusProposerReward: math.LegacyZeroDec(),
 				},
 			},
 			expErr:    true,
-			expErrMsg: "community tax too large: 2.000000000000000000",
+			expErrMsg: "ubi pool too large: 2.000000000000000000",
 		},
 		{
-			name: "negative community tax",
+			name: "negative ubi pool",
 			msg: &distrtypes.MsgUpdateParams{
 				Authority: f.distrKeeper.GetAuthority(),
 				Params: distrtypes.Params{
-					CommunityTax:        math.LegacyNewDecWithPrec(-2, 1),
+					Ubi:                 math.LegacyNewDecWithPrec(-2, 1),
 					WithdrawAddrEnabled: withdrawAddrEnabled,
 					BaseProposerReward:  math.LegacyZeroDec(),
 					BonusProposerReward: math.LegacyZeroDec(),
 				},
 			},
 			expErr:    true,
-			expErrMsg: "community tax must be positive: -0.200000000000000000",
+			expErrMsg: "ubi pool must be positive: -0.200000000000000000",
 		},
 		{
 			name: "base proposer reward set",
 			msg: &distrtypes.MsgUpdateParams{
 				Authority: f.distrKeeper.GetAuthority(),
 				Params: distrtypes.Params{
-					CommunityTax:        communityTax,
+					Ubi:                 ubi,
 					BaseProposerReward:  math.LegacyNewDecWithPrec(1, 2),
 					BonusProposerReward: math.LegacyZeroDec(),
 					WithdrawAddrEnabled: withdrawAddrEnabled,
@@ -757,7 +675,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			msg: &distrtypes.MsgUpdateParams{
 				Authority: f.distrKeeper.GetAuthority(),
 				Params: distrtypes.Params{
-					CommunityTax:        communityTax,
+					Ubi:                 ubi,
 					BaseProposerReward:  math.LegacyZeroDec(),
 					BonusProposerReward: math.LegacyNewDecWithPrec(1, 2),
 					WithdrawAddrEnabled: withdrawAddrEnabled,
@@ -771,7 +689,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			msg: &distrtypes.MsgUpdateParams{
 				Authority: f.distrKeeper.GetAuthority(),
 				Params: distrtypes.Params{
-					CommunityTax:        communityTax,
+					Ubi:                 ubi,
 					BaseProposerReward:  math.LegacyZeroDec(),
 					BonusProposerReward: math.LegacyZeroDec(),
 					WithdrawAddrEnabled: withdrawAddrEnabled,
@@ -808,95 +726,13 @@ func TestMsgUpdateParams(t *testing.T) {
 	}
 }
 
-func TestMsgCommunityPoolSpend(t *testing.T) {
-	t.Parallel()
-	f := initFixture(t)
-
-	require.NoError(t, f.distrKeeper.Params.Set(f.sdkCtx, distrtypes.DefaultParams()))
-	initialFeePool := sdk.NewDecCoins(sdk.DecCoin{Denom: "stake", Amount: math.LegacyNewDec(10000)})
-	require.NoError(t, f.distrKeeper.FeePool.Set(f.sdkCtx, distrtypes.FeePool{
-		CommunityPool: initialFeePool,
-	}))
-
-	initTokens := f.stakingKeeper.TokensFromConsensusPower(f.sdkCtx, int64(100))
-	err := f.bankKeeper.MintCoins(f.sdkCtx, distrtypes.ModuleName, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens)))
-	require.NoError(t, err)
-
-	recipient := sdk.AccAddress([]byte("addr1"))
-
-	testCases := []struct {
-		name      string
-		msg       *distrtypes.MsgCommunityPoolSpend
-		expErr    bool
-		expErrMsg string
-	}{
-		{
-			name: "invalid authority",
-			msg: &distrtypes.MsgCommunityPoolSpend{
-				Authority: "invalid",
-				Recipient: recipient.String(),
-				Amount:    sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
-			},
-			expErr:    true,
-			expErrMsg: "invalid authority",
-		},
-		{
-			name: "invalid recipient",
-			msg: &distrtypes.MsgCommunityPoolSpend{
-				Authority: f.distrKeeper.GetAuthority(),
-				Recipient: "invalid",
-				Amount:    sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
-			},
-			expErr:    true,
-			expErrMsg: "decoding bech32 failed",
-		},
-		{
-			name: "valid message",
-			msg: &distrtypes.MsgCommunityPoolSpend{
-				Authority: f.distrKeeper.GetAuthority(),
-				Recipient: recipient.String(),
-				Amount:    sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(100))),
-			},
-			expErr: false,
-		},
-	}
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			res, err := f.app.RunMsg(
-				tc.msg,
-				integration.WithAutomaticFinalizeBlock(),
-				integration.WithAutomaticCommit(),
-			)
-			if tc.expErr {
-				assert.ErrorContains(t, err, tc.expErrMsg)
-			} else {
-				assert.NilError(t, err)
-				assert.Assert(t, res != nil)
-
-				// check the result
-				result := distrtypes.MsgCommunityPoolSpend{}
-				err = f.cdc.Unmarshal(res.Value, &result)
-				assert.NilError(t, err)
-
-				// query the community pool to verify it has been updated
-				communityPool, err := f.distrKeeper.FeePool.Get(f.sdkCtx)
-				require.NoError(t, err)
-				newPool, negative := initialFeePool.SafeSub(sdk.NewDecCoinsFromCoins(tc.msg.Amount...))
-				assert.Assert(t, negative == false)
-				assert.DeepEqual(t, communityPool.CommunityPool, newPool)
-			}
-		})
-	}
-}
-
 func TestMsgDepositValidatorRewardsPool(t *testing.T) {
 	t.Parallel()
 	f := initFixture(t)
 
 	require.NoError(t, f.distrKeeper.Params.Set(f.sdkCtx, distrtypes.DefaultParams()))
 	err := f.distrKeeper.FeePool.Set(f.sdkCtx, distrtypes.FeePool{
-		CommunityPool: sdk.NewDecCoins(sdk.DecCoin{Denom: "stake", Amount: math.LegacyNewDec(100)}),
+		Ubi: sdk.NewDecCoins(sdk.DecCoin{Denom: "stake", Amount: math.LegacyNewDec(100)}),
 	})
 	require.NoError(t, err)
 	initTokens := f.stakingKeeper.TokensFromConsensusPower(f.sdkCtx, int64(10000))

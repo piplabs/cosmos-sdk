@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"sort"
 	"testing"
+	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -60,7 +61,10 @@ func TestValidateVoteExtensions(t *testing.T) {
 		assert.NilError(t, f.stakingKeeper.SetValidator(f.sdkCtx, v))
 		assert.NilError(t, f.stakingKeeper.SetValidatorByConsAddr(f.sdkCtx, v))
 		assert.NilError(t, f.stakingKeeper.SetNewValidatorByPowerIndex(f.sdkCtx, v))
-		_, err := f.stakingKeeper.Delegate(f.sdkCtx, sdk.AccAddress(privKeys[i].PubKey().Address()), v.Tokens, stakingtypes.Unbonded, v, true)
+		_, _, err := f.stakingKeeper.Delegate(
+			f.sdkCtx, sdk.AccAddress(privKeys[i].PubKey().Address()), v.Tokens, stakingtypes.Unbonded, v,
+			true, stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0),
+		)
 		assert.NilError(t, err)
 
 		// each val produces a vote

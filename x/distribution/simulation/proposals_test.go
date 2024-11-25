@@ -39,6 +39,6 @@ func TestProposalMsgs(t *testing.T) {
 	assert.Assert(t, ok)
 
 	assert.Equal(t, sdk.AccAddress(address.Module("gov")).String(), msgUpdateParams.Authority)
-	assert.DeepEqual(t, sdkmath.LegacyNewDec(0), msgUpdateParams.Params.CommunityTax)
+	assert.DeepEqual(t, sdkmath.LegacyNewDec(0), msgUpdateParams.Params.Ubi)
 	assert.Equal(t, true, msgUpdateParams.Params.WithdrawAddrEnabled)
 }

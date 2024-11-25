@@ -115,7 +115,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data types.GenesisState) {
 		}
 	}
 
-	moduleHoldings = moduleHoldings.Add(data.FeePool.CommunityPool...)
+	moduleHoldings = moduleHoldings.Add(data.FeePool.Ubi...)
 	moduleHoldingsInt, _ := moduleHoldings.TruncateDecimal()
 
 	// check if the module account exists

@@ -18,6 +18,15 @@ func (k *Keeper) BeginBlocker(ctx context.Context) error {
 
 // EndBlocker called at every block, update validator set
 func (k *Keeper) EndBlocker(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	valUpdates, _, err := k.EndBlockerWithUnbondedEntries(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return valUpdates, nil
+}
+
+func (k Keeper) EndBlockerWithUnbondedEntries(ctx context.Context) ([]abci.ValidatorUpdate, []types.UnbondedEntry, error) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, telemetry.Now(), telemetry.MetricKeyEndBlocker)
 	return k.BlockValidatorUpdates(ctx)
 }

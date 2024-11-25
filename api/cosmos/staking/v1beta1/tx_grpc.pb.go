@@ -19,13 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Msg_CreateValidator_FullMethodName           = "/cosmos.staking.v1beta1.Msg/CreateValidator"
-	Msg_EditValidator_FullMethodName             = "/cosmos.staking.v1beta1.Msg/EditValidator"
-	Msg_Delegate_FullMethodName                  = "/cosmos.staking.v1beta1.Msg/Delegate"
-	Msg_BeginRedelegate_FullMethodName           = "/cosmos.staking.v1beta1.Msg/BeginRedelegate"
-	Msg_Undelegate_FullMethodName                = "/cosmos.staking.v1beta1.Msg/Undelegate"
-	Msg_CancelUnbondingDelegation_FullMethodName = "/cosmos.staking.v1beta1.Msg/CancelUnbondingDelegation"
-	Msg_UpdateParams_FullMethodName              = "/cosmos.staking.v1beta1.Msg/UpdateParams"
+	Msg_CreateValidator_FullMethodName = "/cosmos.staking.v1beta1.Msg/CreateValidator"
+	Msg_EditValidator_FullMethodName   = "/cosmos.staking.v1beta1.Msg/EditValidator"
+	Msg_Delegate_FullMethodName        = "/cosmos.staking.v1beta1.Msg/Delegate"
+	Msg_BeginRedelegate_FullMethodName = "/cosmos.staking.v1beta1.Msg/BeginRedelegate"
+	Msg_Undelegate_FullMethodName      = "/cosmos.staking.v1beta1.Msg/Undelegate"
+	Msg_UpdateParams_FullMethodName    = "/cosmos.staking.v1beta1.Msg/UpdateParams"
 )
 
 // MsgClient is the client API for Msg service.
@@ -45,11 +44,6 @@ type MsgClient interface {
 	// Undelegate defines a method for performing an undelegation from a
 	// delegate and a validator.
 	Undelegate(ctx context.Context, in *MsgUndelegate, opts ...grpc.CallOption) (*MsgUndelegateResponse, error)
-	// CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation
-	// and delegate back to previous validator.
-	//
-	// Since: cosmos-sdk 0.46
-	CancelUnbondingDelegation(ctx context.Context, in *MsgCancelUnbondingDelegation, opts ...grpc.CallOption) (*MsgCancelUnbondingDelegationResponse, error)
 	// UpdateParams defines an operation for updating the x/staking module
 	// parameters.
 	// Since: cosmos-sdk 0.47
@@ -109,15 +103,6 @@ func (c *msgClient) Undelegate(ctx context.Context, in *MsgUndelegate, opts ...g
 	return out, nil
 }
 
-func (c *msgClient) CancelUnbondingDelegation(ctx context.Context, in *MsgCancelUnbondingDelegation, opts ...grpc.CallOption) (*MsgCancelUnbondingDelegationResponse, error) {
-	out := new(MsgCancelUnbondingDelegationResponse)
-	err := c.cc.Invoke(ctx, Msg_CancelUnbondingDelegation_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
 	out := new(MsgUpdateParamsResponse)
 	err := c.cc.Invoke(ctx, Msg_UpdateParams_FullMethodName, in, out, opts...)
@@ -144,11 +129,6 @@ type MsgServer interface {
 	// Undelegate defines a method for performing an undelegation from a
 	// delegate and a validator.
 	Undelegate(context.Context, *MsgUndelegate) (*MsgUndelegateResponse, error)
-	// CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation
-	// and delegate back to previous validator.
-	//
-	// Since: cosmos-sdk 0.46
-	CancelUnbondingDelegation(context.Context, *MsgCancelUnbondingDelegation) (*MsgCancelUnbondingDelegationResponse, error)
 	// UpdateParams defines an operation for updating the x/staking module
 	// parameters.
 	// Since: cosmos-sdk 0.47
@@ -174,9 +154,6 @@ func (UnimplementedMsgServer) BeginRedelegate(context.Context, *MsgBeginRedelega
 }
 func (UnimplementedMsgServer) Undelegate(context.Context, *MsgUndelegate) (*MsgUndelegateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Undelegate not implemented")
-}
-func (UnimplementedMsgServer) CancelUnbondingDelegation(context.Context, *MsgCancelUnbondingDelegation) (*MsgCancelUnbondingDelegationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelUnbondingDelegation not implemented")
 }
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
@@ -284,24 +261,6 @@ func _Msg_Undelegate_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CancelUnbondingDelegation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCancelUnbondingDelegation)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).CancelUnbondingDelegation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_CancelUnbondingDelegation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CancelUnbondingDelegation(ctx, req.(*MsgCancelUnbondingDelegation))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MsgUpdateParams)
 	if err := dec(in); err != nil {
@@ -346,10 +305,6 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Undelegate",
 			Handler:    _Msg_Undelegate_Handler,
-		},
-		{
-			MethodName: "CancelUnbondingDelegation",
-			Handler:    _Msg_CancelUnbondingDelegation_Handler,
 		},
 		{
 			MethodName: "UpdateParams",

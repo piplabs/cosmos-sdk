@@ -225,8 +225,11 @@ func GenesisStateWithValSet(
 
 	validators := make([]stakingtypes.Validator, 0, len(valSet.Validators))
 	delegations := make([]stakingtypes.Delegation, 0, len(valSet.Validators))
+	periodDelegations := make([]stakingtypes.PeriodDelegation, 0, len(valSet.Validators))
 
 	bondAmt := sdk.DefaultPowerReduction
+
+	now := time.Now()
 
 	for _, val := range valSet.Validators {
 		pk, err := cryptocodec.FromCmtPubKeyInterface(val.PubKey)
@@ -240,25 +243,42 @@ func GenesisStateWithValSet(
 		}
 
 		validator := stakingtypes.Validator{
-			OperatorAddress:   sdk.ValAddress(val.Address).String(),
-			ConsensusPubkey:   pkAny,
-			Jailed:            false,
-			Status:            stakingtypes.Bonded,
-			Tokens:            bondAmt,
-			DelegatorShares:   sdkmath.LegacyOneDec(),
-			Description:       stakingtypes.Description{},
-			UnbondingHeight:   int64(0),
-			UnbondingTime:     time.Unix(0, 0).UTC(),
-			Commission:        stakingtypes.NewCommission(sdkmath.LegacyZeroDec(), sdkmath.LegacyZeroDec(), sdkmath.LegacyZeroDec()),
-			MinSelfDelegation: sdkmath.ZeroInt(),
+			OperatorAddress:        sdk.ValAddress(val.Address).String(),
+			ConsensusPubkey:        pkAny,
+			Jailed:                 false,
+			Status:                 stakingtypes.Bonded,
+			Tokens:                 bondAmt,
+			DelegatorShares:        sdkmath.LegacyOneDec(),
+			Description:            stakingtypes.Description{},
+			UnbondingHeight:        int64(0),
+			UnbondingTime:          time.Unix(0, 0).UTC(),
+			Commission:             stakingtypes.NewCommission(sdkmath.LegacyZeroDec(), sdkmath.LegacyZeroDec(), sdkmath.LegacyZeroDec()),
+			MinSelfDelegation:      sdkmath.ZeroInt(),
+			SupportTokenType:       0,
+			DelegatorRewardsShares: sdkmath.LegacyOneDec(),
+			RewardsTokens:          sdkmath.LegacyNewDecFromInt(bondAmt),
 		}
 		validators = append(validators, validator)
-		delegations = append(delegations, stakingtypes.NewDelegation(genAccs[0].GetAddress().String(), sdk.ValAddress(val.Address).String(), sdkmath.LegacyOneDec()))
+		delegations = append(delegations, stakingtypes.NewDelegation(
+			genAccs[0].GetAddress().String(), sdk.ValAddress(val.Address).String(), sdkmath.LegacyOneDec(), sdkmath.LegacyOneDec(),
+		))
+		periodDelegations = append(periodDelegations, stakingtypes.NewPeriodDelegation(
+			genAccs[0].GetAddress().String(),
+			sdk.ValAddress(val.Address).String(),
+			"1",
+			sdkmath.LegacyOneDec(),
+			sdkmath.LegacyOneDec(),
+			1,
+			now.Add(time.Hour*24*30),
+		))
 
 	}
 
 	// set validators and delegations
-	stakingGenesis := stakingtypes.NewGenesisState(stakingtypes.DefaultParams(), validators, delegations)
+	stakingGenesis := stakingtypes.NewGenesisState(
+		stakingtypes.DefaultParams(),
+		validators, delegations, periodDelegations,
+	)
 	genesisState[stakingtypes.ModuleName] = codec.MustMarshalJSON(stakingGenesis)
 
 	totalSupply := sdk.NewCoins()

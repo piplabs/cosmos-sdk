@@ -50,7 +50,6 @@ func (suite *SimTestSuite) TestWeightedOperations() {
 		{simulation.DefaultWeightMsgSetWithdrawAddress, types.ModuleName, sdk.MsgTypeURL(&types.MsgSetWithdrawAddress{})},
 		{simulation.DefaultWeightMsgWithdrawDelegationReward, types.ModuleName, sdk.MsgTypeURL(&types.MsgWithdrawDelegatorReward{})},
 		{simulation.DefaultWeightMsgWithdrawValidatorCommission, types.ModuleName, sdk.MsgTypeURL(&types.MsgWithdrawValidatorCommission{})},
-		{simulation.DefaultWeightMsgFundCommunityPool, types.ModuleName, sdk.MsgTypeURL(&types.MsgFundCommunityPool{})},
 	}
 
 	for i, w := range weightedOps {
@@ -108,10 +107,12 @@ func (suite *SimTestSuite) TestSimulateMsgWithdrawDelegatorReward() {
 
 	// setup delegation
 	delTokens := sdk.TokensFromConsensusPower(2, sdk.DefaultPowerReduction)
-	validator0, issuedShares := validator0.AddTokensFromDel(delTokens)
+	validator0, issuedShares, _ := validator0.AddTokensFromDel(delTokens, math.LegacyOneDec())
 	delegator := accounts[1]
 
-	delegation := stakingtypes.NewDelegation(delegator.Address.String(), validator0.GetOperator(), issuedShares)
+	delegation := stakingtypes.NewDelegation(
+		delegator.Address.String(), validator0.GetOperator(), issuedShares, issuedShares,
+	)
 	suite.Require().NoError(suite.stakingKeeper.SetDelegation(suite.ctx, delegation))
 	valBz, err := address.NewBech32Codec("cosmosvaloper").StringToBytes(validator0.GetOperator())
 	suite.Require().NoError(err)
@@ -210,34 +211,6 @@ func (suite *SimTestSuite) testSimulateMsgWithdrawValidatorCommission(tokenName 
 	}
 }
 
-// TestSimulateMsgFundCommunityPool tests the normal scenario of a valid message of type TypeMsgFundCommunityPool.
-// Abonormal scenarios, where the message is created by an errors, are not tested here.
-func (suite *SimTestSuite) TestSimulateMsgFundCommunityPool() {
-	// setup 3 accounts
-	s := rand.NewSource(1)
-	r := rand.New(s)
-	accounts := suite.getTestingAccounts(r, 3)
-
-	suite.app.FinalizeBlock(&abci.RequestFinalizeBlock{
-		Height: suite.app.LastBlockHeight() + 1,
-		Hash:   suite.app.LastCommitID().Hash,
-	})
-
-	// execute operation
-	op := simulation.SimulateMsgFundCommunityPool(suite.txConfig, suite.accountKeeper, suite.bankKeeper, suite.distrKeeper, suite.stakingKeeper)
-	operationMsg, futureOperations, err := op(r, suite.app.BaseApp, suite.ctx, accounts, "")
-	suite.Require().NoError(err)
-
-	var msg types.MsgFundCommunityPool
-	err = proto.Unmarshal(operationMsg.Msg, &msg)
-	suite.Require().NoError(err)
-	suite.Require().True(operationMsg.OK)
-	suite.Require().Equal("4896096stake", msg.Amount.String())
-	suite.Require().Equal("cosmos1ghekyjucln7y67ntx7cf27m9dpuxxemn4c8g4r", msg.Depositor)
-	suite.Require().Equal(sdk.MsgTypeURL(&types.MsgFundCommunityPool{}), sdk.MsgTypeURL(&msg))
-	suite.Require().Len(futureOperations, 0)
-}
-
 type SimTestSuite struct {
 	suite.Suite
 
@@ -309,12 +282,14 @@ func (suite *SimTestSuite) getTestingValidator(accounts []simtypes.Account, comm
 	valPubKey := account.PubKey
 	valAddr := sdk.ValAddress(account.PubKey.Address().Bytes())
 	validator, err := stakingtypes.NewValidator(valAddr.String(), valPubKey, stakingtypes.
-		Description{})
+		Description{}, 0)
 	require.NoError(err)
 	validator, err = validator.SetInitialCommission(commission)
 	require.NoError(err)
 	validator.DelegatorShares = math.LegacyNewDec(100)
+	validator.DelegatorRewardsShares = math.LegacyNewDec(100)
 	validator.Tokens = math.NewInt(1000000)
+	validator.RewardsTokens = math.LegacyNewDecFromInt(math.NewInt(1000000))
 
 	suite.stakingKeeper.SetValidator(suite.ctx, validator)
 

@@ -172,11 +172,13 @@ func (suite *SimTestSuite) TestSimulateMsgUnjail() {
 
 	// setup self delegation
 	delTokens := suite.stakingKeeper.TokensFromConsensusPower(ctx, 2)
-	validator0, issuedShares := validator0.AddTokensFromDel(delTokens)
+	validator0, issuedShares, _ := validator0.AddTokensFromDel(delTokens, math.LegacyOneDec())
 	val0AccAddress, err := sdk.ValAddressFromBech32(validator0.OperatorAddress)
 	suite.Require().NoError(err)
 
-	selfDelegation := stakingtypes.NewDelegation(suite.accounts[0].Address.String(), validator0.GetOperator(), issuedShares)
+	selfDelegation := stakingtypes.NewDelegation(
+		suite.accounts[0].Address.String(), validator0.GetOperator(), issuedShares, issuedShares,
+	)
 	suite.Require().NoError(suite.stakingKeeper.SetDelegation(ctx, selfDelegation))
 	suite.Require().NoError(suite.distrKeeper.SetDelegatorStartingInfo(ctx, val0AccAddress, val0AccAddress.Bytes(), distrtypes.NewDelegatorStartingInfo(2, math.LegacyOneDec(), 200)))
 
@@ -205,7 +207,7 @@ func getTestingValidator(ctx sdk.Context, stakingKeeper *stakingkeeper.Keeper, a
 	account := accounts[n]
 	valPubKey := account.ConsKey.PubKey()
 	valAddr := sdk.ValAddress(account.PubKey.Address().Bytes())
-	validator, err := stakingtypes.NewValidator(valAddr.String(), valPubKey, stakingtypes.Description{})
+	validator, err := stakingtypes.NewValidator(valAddr.String(), valPubKey, stakingtypes.Description{}, 0)
 	if err != nil {
 		return stakingtypes.Validator{}, fmt.Errorf("failed to create validator: %w", err)
 	}
@@ -216,7 +218,9 @@ func getTestingValidator(ctx sdk.Context, stakingKeeper *stakingkeeper.Keeper, a
 	}
 
 	validator.DelegatorShares = math.LegacyNewDec(100)
+	validator.DelegatorRewardsShares = math.LegacyNewDec(100)
 	validator.Tokens = math.NewInt(1000000)
+	validator.RewardsTokens = math.LegacyNewDecFromInt(math.NewInt(1000000))
 
 	stakingKeeper.SetValidator(ctx, validator)
 

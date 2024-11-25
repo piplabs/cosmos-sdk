@@ -45,13 +45,14 @@ func TestMigrateJSON(t *testing.T) {
 	"delegator_starting_infos": [],
 	"delegator_withdraw_infos": [],
 	"fee_pool": {
-		"community_pool": []
+		"ubi": []
 	},
 	"outstanding_rewards": [],
 	"params": {
 		"base_proposer_reward": "0.000000000000000000",
 		"bonus_proposer_reward": "0.000000000000000000",
-		"community_tax": "0.020000000000000000",
+		"max_ubi": "0.200000000000000000",
+		"ubi": "0.020000000000000000",
 		"withdraw_addr_enabled": true
 	},
 	"previous_proposer": "",

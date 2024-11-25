@@ -12,6 +12,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -51,7 +52,10 @@ func (sh *Helper) CreateValidatorWithValPower(addr sdk.ValAddress, pk cryptotype
 // CreateValidatorMsg returns a message used to create validator in this service.
 func (sh *Helper) CreateValidatorMsg(addr sdk.ValAddress, pk cryptotypes.PubKey, stakeAmount math.Int) *stakingtypes.MsgCreateValidator {
 	coin := sdk.NewCoin(sh.Denom, stakeAmount)
-	msg, err := stakingtypes.NewMsgCreateValidator(addr.String(), pk, coin, stakingtypes.Description{}, sh.Commission, math.OneInt())
+	msg, err := stakingtypes.NewMsgCreateValidator(
+		addr.String(), pk, coin, stakingtypes.Description{}, sh.Commission, math.OneInt(),
+		0,
+	)
 	require.NoError(sh.t, err)
 	return msg
 }
@@ -62,7 +66,10 @@ func (sh *Helper) CreateValidatorWithMsg(ctx context.Context, msg *stakingtypes.
 }
 
 func (sh *Helper) createValidator(addr sdk.ValAddress, pk cryptotypes.PubKey, coin sdk.Coin, ok bool) {
-	msg, err := stakingtypes.NewMsgCreateValidator(addr.String(), pk, coin, stakingtypes.Description{Moniker: "TestValidator"}, sh.Commission, math.OneInt())
+	msg, err := stakingtypes.NewMsgCreateValidator(
+		addr.String(), pk, coin, stakingtypes.Description{Moniker: "TestValidator"}, sh.Commission, math.OneInt(),
+		0,
+	)
 	require.NoError(sh.t, err)
 	res, err := sh.msgSrvr.CreateValidator(sh.Ctx, msg)
 	if ok {
@@ -77,7 +84,10 @@ func (sh *Helper) createValidator(addr sdk.ValAddress, pk cryptotypes.PubKey, co
 // Delegate calls staking module staking module `MsgServer/Delegate` to delegate stake for a validator
 func (sh *Helper) Delegate(delegator sdk.AccAddress, val sdk.ValAddress, amount math.Int) {
 	coin := sdk.NewCoin(sh.Denom, amount)
-	msg := stakingtypes.NewMsgDelegate(delegator.String(), val.String(), coin)
+	msg := stakingtypes.NewMsgDelegate(
+		delegator.String(), val.String(), coin,
+		types.FlexiblePeriodDelegationID, 0,
+	)
 	res, err := sh.msgSrvr.Delegate(sh.Ctx, msg)
 	require.NoError(sh.t, err)
 	require.NotNil(sh.t, res)
@@ -86,7 +96,10 @@ func (sh *Helper) Delegate(delegator sdk.AccAddress, val sdk.ValAddress, amount 
 // DelegateWithPower calls staking module `MsgServer/Delegate` to delegate stake for a validator
 func (sh *Helper) DelegateWithPower(delegator sdk.AccAddress, val sdk.ValAddress, power int64) {
 	coin := sdk.NewCoin(sh.Denom, sh.k.TokensFromConsensusPower(sh.Ctx, power))
-	msg := stakingtypes.NewMsgDelegate(delegator.String(), val.String(), coin)
+	msg := stakingtypes.NewMsgDelegate(
+		delegator.String(), val.String(), coin,
+		types.FlexiblePeriodDelegationID, 0,
+	)
 	res, err := sh.msgSrvr.Delegate(sh.Ctx, msg)
 	require.NoError(sh.t, err)
 	require.NotNil(sh.t, res)
@@ -95,7 +108,7 @@ func (sh *Helper) DelegateWithPower(delegator sdk.AccAddress, val sdk.ValAddress
 // Undelegate calls staking module `MsgServer/Undelegate` to unbound some stake from a validator.
 func (sh *Helper) Undelegate(delegator sdk.AccAddress, val sdk.ValAddress, amount math.Int, ok bool) {
 	unbondAmt := sdk.NewCoin(sh.Denom, amount)
-	msg := stakingtypes.NewMsgUndelegate(delegator.String(), val.String(), unbondAmt)
+	msg := stakingtypes.NewMsgUndelegate(delegator.String(), val.String(), stakingtypes.FlexiblePeriodDelegationID, unbondAmt)
 	res, err := sh.msgSrvr.Undelegate(sh.Ctx, msg)
 	if ok {
 		require.NoError(sh.t, err)

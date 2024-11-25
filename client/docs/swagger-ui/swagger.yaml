@@ -9556,10 +9556,10 @@ paths:
                       format: byte
       tags:
         - Service
-  /cosmos/distribution/v1beta1/community_pool:
+  /cosmos/distribution/v1beta1/ubi:
     get:
-      summary: CommunityPool queries the community pool coins.
-      operationId: CommunityPool
+      summary: Ubi queries the ubi coins.
+      operationId: Ubi
       responses:
         '200':
           description: A successful response.
@@ -9586,8 +9586,8 @@ paths:
                     signatures required by gogoproto.
                 description: pool defines community pool's coins.
             description: >-
-              QueryCommunityPoolResponse is the response type for the
-              Query/CommunityPool
+              QueryUbiResponse is the response type for the
+              Query/Ubi
 
               RPC method.
         default:
@@ -9884,7 +9884,7 @@ paths:
                 description: params defines the parameters of the module.
                 type: object
                 properties:
-                  community_tax:
+                  ubi:
                     type: string
                   base_proposer_reward:
                     type: string
@@ -47657,7 +47657,7 @@ definitions:
   cosmos.distribution.v1beta1.Params:
     type: object
     properties:
-      community_tax:
+      ubi:
         type: string
       base_proposer_reward:
         type: string
@@ -47676,7 +47676,7 @@ definitions:
       withdraw_addr_enabled:
         type: boolean
     description: Params defines the set of params for the distribution module.
-  cosmos.distribution.v1beta1.QueryCommunityPoolResponse:
+  cosmos.distribution.v1beta1.QueryUbiResponse:
     type: object
     properties:
       pool:
@@ -47695,8 +47695,8 @@ definitions:
             signatures required by gogoproto.
         description: pool defines community pool's coins.
     description: >-
-      QueryCommunityPoolResponse is the response type for the
-      Query/CommunityPool
+      QueryUbiResponse is the response type for the
+      Query/Ubi
 
       RPC method.
   cosmos.distribution.v1beta1.QueryDelegationRewardsResponse:
@@ -47797,7 +47797,7 @@ definitions:
         description: params defines the parameters of the module.
         type: object
         properties:
-          community_tax:
+          ubi:
             type: string
           base_proposer_reward:
             type: string

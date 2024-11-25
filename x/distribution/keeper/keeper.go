@@ -199,11 +199,11 @@ func (k Keeper) GetTotalRewards(ctx context.Context) (totalRewards sdk.DecCoins)
 	return totalRewards
 }
 
-// FundCommunityPool allows an account to directly fund the community fund pool.
+// FundUbi allows an account to directly fund the ubi.
 // The amount is first added to the distribution module account and then directly
 // added to the pool. An error is returned if the amount cannot be sent to the
 // module account.
-func (k Keeper) FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error {
+func (k Keeper) FundUbi(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error {
 	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, sender, types.ModuleName, amount); err != nil {
 		return err
 	}
@@ -213,6 +213,6 @@ func (k Keeper) FundCommunityPool(ctx context.Context, amount sdk.Coins, sender 
 		return err
 	}
 
-	feePool.CommunityPool = feePool.CommunityPool.Add(sdk.NewDecCoinsFromCoins(amount...)...)
+	feePool.Ubi = feePool.Ubi.Add(sdk.NewDecCoinsFromCoins(amount...)...)
 	return k.FeePool.Set(ctx, feePool)
 }

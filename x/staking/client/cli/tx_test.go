@@ -25,6 +25,7 @@ import (
 	testutilmod "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/staking/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 var PKs = simtestutil.CreateTestPubKeys(500)
@@ -81,7 +82,7 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 	valPubKey := privKey.PubKey()
 	moniker := "DefaultMoniker"
 	require := s.Require()
-	mkTxValCfg := func(amount, commission, commissionMax, commissionMaxChange, minSelfDelegation string) cli.TxCreateValidatorConfig {
+	mkTxValCfg := func(amount, commission, commissionMax, commissionMaxChange, minSelfDelegation, supportTokenType string) cli.TxCreateValidatorConfig {
 		return cli.TxCreateValidatorConfig{
 			IP:                      ip,
 			ChainID:                 chainID,
@@ -94,6 +95,7 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 			CommissionMaxRate:       commissionMax,
 			CommissionMaxChangeRate: commissionMaxChange,
 			MinSelfDelegation:       minSelfDelegation,
+			SupportTokenType:        supportTokenType,
 		}
 	}
 
@@ -105,42 +107,42 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 		{
 			name:        "all defaults",
 			fsModify:    func(fs *pflag.FlagSet) {},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "1"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "1", "0"),
 		},
 		{
 			name: "Custom amount",
 			fsModify: func(fs *pflag.FlagSet) {
 				require.NoError(fs.Set(cli.FlagAmount, "2000stake"))
 			},
-			expectedCfg: mkTxValCfg("2000stake", "0.1", "0.2", "0.01", "1"),
+			expectedCfg: mkTxValCfg("2000stake", "0.1", "0.2", "0.01", "1", "0"),
 		},
 		{
 			name: "Custom commission rate",
 			fsModify: func(fs *pflag.FlagSet) {
 				require.NoError(fs.Set(cli.FlagCommissionRate, "0.54"))
 			},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.54", "0.2", "0.01", "1"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.54", "0.2", "0.01", "1", "0"),
 		},
 		{
 			name: "Custom commission max rate",
 			fsModify: func(fs *pflag.FlagSet) {
 				require.NoError(fs.Set(cli.FlagCommissionMaxRate, "0.89"))
 			},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.89", "0.01", "1"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.89", "0.01", "1", "0"),
 		},
 		{
 			name: "Custom commission max change rate",
 			fsModify: func(fs *pflag.FlagSet) {
 				require.NoError(fs.Set(cli.FlagCommissionMaxChangeRate, "0.55"))
 			},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.55", "1"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.55", "1", "0"),
 		},
 		{
 			name: "Custom min self delegations",
 			fsModify: func(fs *pflag.FlagSet) {
 				require.NoError(fs.Set(cli.FlagMinSelfDelegation, "0.33"))
 			},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "0.33"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "0.33", "0"),
 		},
 	}
 
@@ -176,7 +178,8 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
   		"commission-rate": "0.5",
   		"commission-max-rate": "1.0",
   		"commission-max-change-rate": "0.1",
-  		"min-self-delegation": "1"
+  		"min-self-delegation": "1",
+		"support-token-type": "0"
 	}`, 100)
 	validJSONFile := testutil.WriteToNewTempFile(s.T(), validJSON)
 	defer validJSONFile.Close()
@@ -189,7 +192,8 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
   		"commission-rate": "0.5",
   		"commission-max-rate": "1.0",
   		"commission-max-change-rate": "0.1",
-  		"min-self-delegation": "1"
+  		"min-self-delegation": "1",
+		"support-token-type": "0"
 	}`, 100)
 	validJSONWOOptionalFile := testutil.WriteToNewTempFile(s.T(), validJSONWithoutOptionalFields)
 	defer validJSONWOOptionalFile.Close()
@@ -201,7 +205,8 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
   		"commission-rate": "0.5",
   		"commission-max-rate": "1.0",
   		"commission-max-change-rate": "0.1",
-  		"min-self-delegation": "1"
+  		"min-self-delegation": "1",
+		"support-token-type": "0"
 	}`
 	noAmountJSONFile := testutil.WriteToNewTempFile(s.T(), noAmountJSON)
 	defer noAmountJSONFile.Close()
@@ -213,7 +218,8 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
   		"commission-rate": "0.5",
   		"commission-max-rate": "1.0",
   		"commission-max-change-rate": "0.1",
-  		"min-self-delegation": "1"
+  		"min-self-delegation": "1",
+		"support-token-type": "0"
 	}`, 100)
 	noPubKeyJSONFile := testutil.WriteToNewTempFile(s.T(), noPubKeyJSON)
 	defer noPubKeyJSONFile.Close()
@@ -225,7 +231,8 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
   		"commission-rate": "0.5",
   		"commission-max-rate": "1.0",
   		"commission-max-change-rate": "0.1",
-  		"min-self-delegation": "1"
+  		"min-self-delegation": "1",
+		"support-token-type": "0"
 	}`, 100)
 	noMonikerJSONFile := testutil.WriteToNewTempFile(s.T(), noMonikerJSON)
 	defer noMonikerJSONFile.Close()
@@ -444,6 +451,8 @@ func (s *CLITestSuite) TestNewDelegateCmd() {
 			[]string{
 				sdk.ValAddress(s.addrs[0]).String(),
 				"fooCoin",
+				"0",
+				"0",
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
@@ -456,6 +465,8 @@ func (s *CLITestSuite) TestNewDelegateCmd() {
 			[]string{
 				"abc",
 				sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(150)).String(),
+				"1",
+				"0",
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
@@ -468,6 +479,8 @@ func (s *CLITestSuite) TestNewDelegateCmd() {
 			[]string{
 				sdk.ValAddress(s.addrs[0]).String(),
 				sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(150)).String(),
+				"2",
+				"0",
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
@@ -507,6 +520,7 @@ func (s *CLITestSuite) TestNewRedelegateCmd() {
 			[]string{
 				sdk.ValAddress(s.addrs[0]).String(), // src-validator-addr
 				sdk.ValAddress(s.addrs[1]).String(), // dst-validator-addr
+				types.FlexiblePeriodDelegationID,
 				"fooCoin",
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
@@ -520,6 +534,7 @@ func (s *CLITestSuite) TestNewRedelegateCmd() {
 			[]string{
 				"invalid",                           // wrong src-validator-addr
 				sdk.ValAddress(s.addrs[1]).String(), // dst-validator-addr
+				types.FlexiblePeriodDelegationID,
 				sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(150)).String(), // amount
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=%d", flags.FlagGas, 300000),
@@ -534,6 +549,7 @@ func (s *CLITestSuite) TestNewRedelegateCmd() {
 			[]string{
 				sdk.ValAddress(s.addrs[0]).String(), // src-validator-addr
 				"invalid",                           // wrong dst-validator-addr
+				types.FlexiblePeriodDelegationID,
 				sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(150)).String(), // amount
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=%d", flags.FlagGas, 300000),
@@ -546,8 +562,9 @@ func (s *CLITestSuite) TestNewRedelegateCmd() {
 		{
 			"valid transaction of delegate",
 			[]string{
-				sdk.ValAddress(s.addrs[0]).String(),                             // src-validator-addr
-				sdk.ValAddress(s.addrs[1]).String(),                             // dst-validator-addr
+				sdk.ValAddress(s.addrs[0]).String(), // src-validator-addr
+				sdk.ValAddress(s.addrs[1]).String(), // dst-validator-addr
+				types.FlexiblePeriodDelegationID,
 				sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(150)).String(), // amount
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=%d", flags.FlagGas, 300000),
@@ -588,6 +605,7 @@ func (s *CLITestSuite) TestNewUnbondCmd() {
 			"invalid unbond amount",
 			[]string{
 				sdk.ValAddress(s.addrs[0]).String(),
+				types.FlexiblePeriodDelegationID,
 				"foo",
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
@@ -600,6 +618,7 @@ func (s *CLITestSuite) TestNewUnbondCmd() {
 			"invalid validator address",
 			[]string{
 				"foo",
+				types.FlexiblePeriodDelegationID,
 				sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(150)).String(),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
@@ -612,6 +631,7 @@ func (s *CLITestSuite) TestNewUnbondCmd() {
 			"valid transaction of unbond",
 			[]string{
 				sdk.ValAddress(s.addrs[0]).String(),
+				types.FlexiblePeriodDelegationID,
 				sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(150)).String(),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
@@ -639,6 +659,7 @@ func (s *CLITestSuite) TestNewUnbondCmd() {
 	}
 }
 
+/* Deprecated since piplabs/v0.50.7
 func (s *CLITestSuite) TestNewCancelUnbondingDelegationCmd() {
 	cmd := cli.NewCancelUnbondingDelegation(addresscodec.NewBech32Codec("cosmosvaloper"), addresscodec.NewBech32Codec("cosmos"))
 
@@ -717,6 +738,7 @@ func (s *CLITestSuite) TestNewCancelUnbondingDelegationCmd() {
 		})
 	}
 }
+*/
 
 func TestCLITestSuite(t *testing.T) {
 	suite.Run(t, new(CLITestSuite))

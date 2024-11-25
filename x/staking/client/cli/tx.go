@@ -31,6 +31,7 @@ var (
 	defaultCommissionMaxRate       = "0.2"
 	defaultCommissionMaxChangeRate = "0.01"
 	defaultMinSelfDelegation       = "1"
+	defaultSupportTokenType        = "0"
 )
 
 // NewTxCmd returns a root CLI command handler for all x/staking transaction commands.
@@ -49,7 +50,8 @@ func NewTxCmd(valAddrCodec, ac address.Codec) *cobra.Command {
 		NewDelegateCmd(valAddrCodec, ac),
 		NewRedelegateCmd(valAddrCodec, ac),
 		NewUnbondCmd(valAddrCodec, ac),
-		NewCancelUnbondingDelegation(valAddrCodec, ac),
+		// Deprecated since piplabs/v0.50.7
+		// NewCancelUnbondingDelegation(valAddrCodec, ac),
 	)
 
 	return stakingTxCmd
@@ -79,7 +81,8 @@ Where validator.json contains:
 	"commission-rate": "0.1",
 	"commission-max-rate": "0.2",
 	"commission-max-change-rate": "0.01",
-	"min-self-delegation": "1"
+	"min-self-delegation": "1",
+	"support-token-type": "0"
 }
 
 where we can get the pubkey using "%s tendermint show-validator"
@@ -182,14 +185,14 @@ func NewEditValidatorCmd(ac address.Codec) *cobra.Command {
 // NewDelegateCmd returns a CLI command handler for creating a MsgDelegate transaction.
 func NewDelegateCmd(valAddrCodec, ac address.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delegate [validator-addr] [amount]",
-		Args:  cobra.ExactArgs(2),
+		Use:   "delegate [validator-addr] [amount] [period_delegation_id] [period_type]",
+		Args:  cobra.ExactArgs(4),
 		Short: "Delegate liquid tokens to a validator",
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`Delegate an amount of liquid coins to a validator from your wallet.
 
 Example:
-$ %s tx staking delegate cosmosvalopers1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm 1000stake --from mykey
+$ %s tx staking delegate cosmosvalopers1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm 1000stake 0 0 --from mykey
 `,
 				version.AppName,
 			),
@@ -214,7 +217,12 @@ $ %s tx staking delegate cosmosvalopers1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm 1
 				return err
 			}
 
-			msg := types.NewMsgDelegate(delAddr, args[0], amount)
+			periodType, err := strconv.Atoi(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgDelegate(delAddr, args[0], amount, args[2], int32(periodType))
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -228,9 +236,9 @@ $ %s tx staking delegate cosmosvalopers1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm 1
 // NewRedelegateCmd returns a CLI command handler for creating a MsgBeginRedelegate transaction.
 func NewRedelegateCmd(valAddrCodec, ac address.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "redelegate [src-validator-addr] [dst-validator-addr] [amount]",
+		Use:   "redelegate [src-validator-addr] [dst-validator-addr] [period-delegation-id] [amount]",
 		Short: "Redelegate illiquid tokens from one validator to another",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`Redelegate an amount of illiquid staking tokens from one validator to another.
 
@@ -260,12 +268,12 @@ $ %s tx staking redelegate cosmosvalopers1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 				return err
 			}
 
-			amount, err := sdk.ParseCoinNormalized(args[2])
+			amount, err := sdk.ParseCoinNormalized(args[3])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgBeginRedelegate(delAddr, args[0], args[1], amount)
+			msg := types.NewMsgBeginRedelegate(delAddr, args[0], args[1], args[2], amount)
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -281,14 +289,14 @@ func NewUnbondCmd(valAddrCodec, ac address.Codec) *cobra.Command {
 	bech32PrefixValAddr := sdk.GetConfig().GetBech32ValidatorAddrPrefix()
 
 	cmd := &cobra.Command{
-		Use:   "unbond [validator-addr] [amount]",
+		Use:   "unbond [validator-addr] [period_delegation_id] [amount]",
 		Short: "Unbond shares from a validator",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`Unbond an amount of bonded shares from a validator.
 
 Example:
-$ %s tx staking unbond %s1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 100stake --from mykey
+$ %s tx staking unbond %s1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 0 100stake --from mykey
 `,
 				version.AppName, bech32PrefixValAddr,
 			),
@@ -308,12 +316,12 @@ $ %s tx staking unbond %s1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 100stake --from
 				return err
 			}
 
-			amount, err := sdk.ParseCoinNormalized(args[1])
+			amount, err := sdk.ParseCoinNormalized(args[2])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgUndelegate(delAddr, args[0], amount)
+			msg := types.NewMsgUndelegate(delAddr, args[0], args[1], amount)
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -325,6 +333,7 @@ $ %s tx staking unbond %s1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 100stake --from
 }
 
 // NewCancelUnbondingDelegation returns a CLI command handler for creating a MsgCancelUnbondingDelegation transaction.
+/* Deprecated since piplabs/v0.50.7
 func NewCancelUnbondingDelegation(valAddrCodec, ac address.Codec) *cobra.Command {
 	bech32PrefixValAddr := sdk.GetConfig().GetBech32ValidatorAddrPrefix()
 
@@ -378,6 +387,7 @@ $ %s tx staking cancel-unbond %s1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 100stake
 
 	return cmd
 }
+*/
 
 func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *flag.FlagSet, val validator, valAc address.Codec) (tx.Factory, *types.MsgCreateValidator, error) {
 	valAddr := clientCtx.GetFromAddress()
@@ -396,11 +406,12 @@ func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 	}
 	msg, err := types.NewMsgCreateValidator(
 		valStr, val.PubKey, val.Amount, description, val.CommissionRates, val.MinSelfDelegation,
+		val.SupportTokenType,
 	)
 	if err != nil {
 		return txf, nil, err
 	}
-	if err := msg.Validate(valAc); err != nil {
+	if err := msg.Validate(valAc, false); err != nil {
 		return txf, nil, err
 	}
 
@@ -432,6 +443,7 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	fsCreateValidator.String(FlagIdentity, "", "The (optional) identity signature (ex. UPort or Keybase)")
 	fsCreateValidator.AddFlagSet(FlagSetCommissionCreate())
 	fsCreateValidator.AddFlagSet(FlagSetMinSelfDelegation())
+	fsCreateValidator.AddFlagSet(FlagSetSupportTokenType())
 	fsCreateValidator.AddFlagSet(FlagSetAmount())
 	fsCreateValidator.AddFlagSet(FlagSetPublicKey())
 
@@ -441,9 +453,10 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	commission max rate:         %s
 	commission max change rate:  %s
 	minimum self delegation:     %s
+	support token type:          %s
 `, defaultAmount, defaultCommissionRate,
 		defaultCommissionMaxRate, defaultCommissionMaxChangeRate,
-		defaultMinSelfDelegation)
+		defaultMinSelfDelegation, defaultSupportTokenType)
 
 	return fsCreateValidator, defaultsDesc
 }
@@ -459,6 +472,7 @@ type TxCreateValidatorConfig struct {
 	CommissionMaxRate       string
 	CommissionMaxChangeRate string
 	MinSelfDelegation       string
+	SupportTokenType        string
 
 	PubKey cryptotypes.PubKey
 
@@ -532,6 +546,11 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 		return c, err
 	}
 
+	c.SupportTokenType, err = flagSet.GetString(FlagSupportTokenType)
+	if err != nil {
+		return c, err
+	}
+
 	c.IP = ip
 	c.P2PPort = p2pPort
 	c.Website = website
@@ -564,6 +583,10 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 
 	if c.MinSelfDelegation == "" {
 		c.MinSelfDelegation = defaultMinSelfDelegation
+	}
+
+	if c.SupportTokenType == "" {
+		c.SupportTokenType = defaultSupportTokenType
 	}
 
 	return c, nil
@@ -603,6 +626,11 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 		return txBldr, nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
 	}
 
+	supportTokenType, err := strconv.Atoi(config.SupportTokenType)
+	if err != nil {
+		return txBldr, nil, err
+	}
+
 	valStr, err := valCodec.BytesToString(sdk.ValAddress(valAddr))
 	if err != nil {
 		return txBldr, nil, err
@@ -615,6 +643,7 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 		description,
 		commissionRates,
 		minSelfDelegation,
+		int32(supportTokenType),
 	)
 	if err != nil {
 		return txBldr, msg, err

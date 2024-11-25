@@ -14,7 +14,7 @@ import (
 
 // AllocateTokens performs reward and fee distribution to all validators based
 // on the F1 fee distribution specification.
-func (k Keeper) AllocateTokens(ctx context.Context, totalPreviousPower int64, bondedVotes []abci.VoteInfo) error {
+func (k Keeper) AllocateTokens(ctx context.Context, bondedVotes []abci.VoteInfo) error {
 	// fetch and clear the collected fees for distribution, since this is
 	// called in BeginBlock, collected fees will be from the previous block
 	// (and distributed to the previous proposer)
@@ -35,19 +35,36 @@ func (k Keeper) AllocateTokens(ctx context.Context, totalPreviousPower int64, bo
 		return err
 	}
 
+	validators := make([]stakingtypes.ValidatorI, len(bondedVotes))
+	var (
+		totalPreviousPower int64
+		totalRewardsTokens = math.LegacyZeroDec()
+	)
+	for i := range bondedVotes {
+		totalPreviousPower += bondedVotes[i].Validator.Power
+
+		val, err := k.stakingKeeper.ValidatorByConsAddr(ctx, bondedVotes[i].Validator.Address)
+		if err != nil {
+			return err
+		}
+
+		validators[i] = val
+		totalRewardsTokens = totalRewardsTokens.Add(val.GetRewardsTokens())
+	}
+
 	if totalPreviousPower == 0 {
-		feePool.CommunityPool = feePool.CommunityPool.Add(feesCollected...)
+		feePool.Ubi = feePool.Ubi.Add(feesCollected...)
 		return k.FeePool.Set(ctx, feePool)
 	}
 
 	// calculate fraction allocated to validators
 	remaining := feesCollected
-	communityTax, err := k.GetCommunityTax(ctx)
+	ubi, err := k.GetUbi(ctx)
 	if err != nil {
 		return err
 	}
 
-	voteMultiplier := math.LegacyOneDec().Sub(communityTax)
+	voteMultiplier := math.LegacyOneDec().Sub(ubi)
 	feeMultiplier := feesCollected.MulDecTruncate(voteMultiplier)
 
 	// allocate tokens proportionally to voting power
@@ -55,19 +72,14 @@ func (k Keeper) AllocateTokens(ctx context.Context, totalPreviousPower int64, bo
 	// TODO: Consider parallelizing later
 	//
 	// Ref: https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
-	for _, vote := range bondedVotes {
-		validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, vote.Validator.Address)
-		if err != nil {
-			return err
-		}
-
+	for i := range validators {
 		// TODO: Consider micro-slashing for missing votes.
 		//
 		// Ref: https://github.com/cosmos/cosmos-sdk/issues/2525#issuecomment-430838701
-		powerFraction := math.LegacyNewDec(vote.Validator.Power).QuoTruncate(math.LegacyNewDec(totalPreviousPower))
+		powerFraction := validators[i].GetRewardsTokens().QuoTruncate(totalRewardsTokens)
 		reward := feeMultiplier.MulDecTruncate(powerFraction)
 
-		err = k.AllocateTokensToValidator(ctx, validator, reward)
+		err = k.AllocateTokensToValidator(ctx, validators[i], reward)
 		if err != nil {
 			return err
 		}
@@ -76,7 +88,7 @@ func (k Keeper) AllocateTokens(ctx context.Context, totalPreviousPower int64, bo
 	}
 
 	// allocate community funding
-	feePool.CommunityPool = feePool.CommunityPool.Add(remaining...)
+	feePool.Ubi = feePool.Ubi.Add(remaining...)
 	return k.FeePool.Set(ctx, feePool)
 }
 

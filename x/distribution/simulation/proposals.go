@@ -36,7 +36,7 @@ func SimulateMsgUpdateParams(r *rand.Rand, _ sdk.Context, _ []simtypes.Account) 
 	var authority sdk.AccAddress = address.Module("gov")
 
 	params := types.DefaultParams()
-	params.CommunityTax = simtypes.RandomDecAmount(r, sdkmath.LegacyNewDec(1))
+	params.Ubi = simtypes.RandomDecAmount(r, sdkmath.LegacyNewDec(1))
 	params.WithdrawAddrEnabled = r.Intn(2) == 0
 
 	return &types.MsgUpdateParams{

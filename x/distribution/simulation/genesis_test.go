@@ -42,7 +42,7 @@ func TestRandomizedGenState(t *testing.T) {
 
 	dec1, _ := sdkmath.LegacyNewDecFromStr("0.210000000000000000")
 
-	require.Equal(t, dec1, distrGenesis.Params.CommunityTax)
+	require.Equal(t, dec1, distrGenesis.Params.Ubi)
 	require.Equal(t, true, distrGenesis.Params.WithdrawAddrEnabled)
 	require.Len(t, distrGenesis.DelegatorStartingInfos, 0)
 	require.Len(t, distrGenesis.DelegatorWithdrawInfos, 0)

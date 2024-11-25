@@ -206,7 +206,7 @@ the distribution `ModuleAccount` account. When a delegator or validator
 withdraws their rewards, they are taken out of the `ModuleAccount`. During begin
 block, the different claims on the fees collected are updated as follows:
 
-* The reserve community tax is charged.
+* The reserve ubi pool is charged.
 * The remainder is distributed proportionally by voting power to all bonded validators
 
 ### The Distribution Scheme
@@ -221,9 +221,9 @@ rewards each account is entitled to are stored, and withdrawals can be triggered
 through the messages `FundCommunityPool`, `WithdrawValidatorCommission` and
 `WithdrawDelegatorReward`.
 
-#### Reward to the Community Pool
+#### Reward to the UBI Pool
 
-The community pool gets `community_tax * fees`, plus any remaining dust after
+The ubi pool gets `ubi * fees`, plus any remaining dust after
 validators get their rewards that are always rounded down to the nearest
 integer value.
 
@@ -234,7 +234,7 @@ bonded validators, including the proposer, in proportion to their consensus powe
 
 ```text
 powFrac = validator power / total bonded validator power
-voteMul = 1 - community_tax
+voteMul = 1 - ubi
 ```
 
 All validators receive `fees * voteMul * powFrac`.
@@ -260,14 +260,14 @@ proportion to their power relative to the entire bonded power.
 
 All validators are equally performant at including pre-commits in their proposed
 blocks. Then hold `(pre_commits included) / (total bonded validator power)`
-constant so that the amortized block reward for the validator is `( validator power / total bonded power) * (1 - community tax rate)` of
+constant so that the amortized block reward for the validator is `( validator power / total bonded power) * (1 - ubi pool rate)` of
 the total rewards. Consequently, the reward for a single delegator is:
 
 ```text
 (delegator proportion of the validator power / validator power) * (validator power / total bonded power)
-  * (1 - community tax rate) * (1 - validator commission rate)
+  * (1 - ubi pool rate) * (1 - validator commission rate)
 = (delegator proportion of the validator power / total bonded power) * (1 -
-community tax rate) * (1 - validator commission rate)
+ubi pool rate) * (1 - validator commission rate)
 ```
 
 ## Messages
@@ -518,15 +518,15 @@ The distribution module contains the following parameters:
 
 | Key                 | Type         | Example                    |
 | ------------------- | ------------ | -------------------------- |
-| communitytax        | string (dec) | "0.020000000000000000" [0] |
+| ubi                 | string (dec) | "0.020000000000000000" [0] |
 | withdrawaddrenabled | bool         | true                       |
 
-* [0] `communitytax` must be positive and cannot exceed 1.00.
+* [0] `ubi` must be positive and cannot exceed 1.00.
 * `baseproposerreward` and `bonusproposerreward` were parameters that are deprecated in v0.47 and are not used.
 
 :::note
-The reserve pool is the pool of collected funds for use by governance taken via the `CommunityTax`.
-Currently with the Cosmos SDK, tokens collected by the CommunityTax are accounted for but unspendable.
+The reserve pool is the pool of collected funds for use by governance taken via the `Ubi`.
+Currently with the Cosmos SDK, tokens collected by the Ubi are accounted for but unspendable.
 :::
 
 ## Client
@@ -606,7 +606,7 @@ Example Output:
 ```yml
 base_proposer_reward: "0.000000000000000000"
 bonus_proposer_reward: "0.000000000000000000"
-community_tax: "0.020000000000000000"
+ubi: "0.020000000000000000"
 withdraw_addr_enabled: true
 ```
 
@@ -790,10 +790,11 @@ Example Output:
 ```json
 {
   "params": {
-    "communityTax": "20000000000000000",
+    "ubi": "0.020000000000000000",
     "baseProposerReward": "00000000000000000",
     "bonusProposerReward": "00000000000000000",
-    "withdrawAddrEnabled": true
+    "withdrawAddrEnabled": true,
+    "max_ubi": "0.200000000000000000"
   }
 }
 ```

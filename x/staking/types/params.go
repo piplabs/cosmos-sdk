@@ -29,20 +29,70 @@ const (
 	// value by not adding the staking module to the application module manager's
 	// SetOrderBeginBlockers.
 	DefaultHistoricalEntries uint32 = 10000
+
+	DefaultFlexiblePeriodType = 0
+
+	DefaultLockedTokenType   = 0
+	DefaultSingularityHeight = 403200 // 14 days with 3 seconds block time
 )
 
 // DefaultMinCommissionRate is set to 0%
 var DefaultMinCommissionRate = math.LegacyZeroDec()
 
+var DefaultMinDelegation = math.NewInt(1)
+
+var DefaultPeriods = []Period{
+	{
+		PeriodType:        0,
+		Duration:          time.Duration(0),
+		RewardsMultiplier: math.LegacyOneDec(), // 1
+	},
+	{
+		PeriodType:        1,
+		Duration:          time.Hour * 24 * 30,                // 3 months
+		RewardsMultiplier: math.LegacyNewDecWithPrec(1051, 3), // 1.051
+	},
+	{
+		PeriodType:        2,
+		Duration:          time.Hour * 24 * 365,              // 1 year
+		RewardsMultiplier: math.LegacyNewDecWithPrec(116, 2), // 1.16
+	},
+	{
+		PeriodType:        3,
+		Duration:          time.Hour * 24 * 30 * 18,          // 18 months
+		RewardsMultiplier: math.LegacyNewDecWithPrec(134, 2), // 1.34
+	},
+}
+
+var DefaultTokenTypes = []TokenTypeInfo{
+	{
+		TokenType:         0,                               // Locked
+		RewardsMultiplier: math.LegacyNewDecWithPrec(5, 1), // 0.5
+	},
+	{
+		TokenType:         1,                   // Unlocked
+		RewardsMultiplier: math.LegacyOneDec(), // 1
+	},
+}
+
 // NewParams creates a new Params instance
-func NewParams(unbondingTime time.Duration, maxValidators, maxEntries, historicalEntries uint32, bondDenom string, minCommissionRate math.LegacyDec) Params {
+func NewParams(
+	unbondingTime time.Duration, maxValidators, maxEntries, historicalEntries uint32, bondDenom string, minCommissionRate math.LegacyDec,
+	minDelegation math.Int, flexiblePeriodType int32, periods []Period, lockedTokenType int32, tokenTypes []TokenTypeInfo, singulariyHeight uint64,
+) Params {
 	return Params{
-		UnbondingTime:     unbondingTime,
-		MaxValidators:     maxValidators,
-		MaxEntries:        maxEntries,
-		HistoricalEntries: historicalEntries,
-		BondDenom:         bondDenom,
-		MinCommissionRate: minCommissionRate,
+		UnbondingTime:      unbondingTime,
+		MaxValidators:      maxValidators,
+		MaxEntries:         maxEntries,
+		HistoricalEntries:  historicalEntries,
+		BondDenom:          bondDenom,
+		MinCommissionRate:  minCommissionRate,
+		MinDelegation:      minDelegation,
+		FlexiblePeriodType: flexiblePeriodType,
+		Periods:            periods,
+		LockedTokenType:    lockedTokenType,
+		TokenTypes:         tokenTypes,
+		SingularityHeight:  singulariyHeight,
 	}
 }
 
@@ -55,6 +105,12 @@ func DefaultParams() Params {
 		DefaultHistoricalEntries,
 		sdk.DefaultBondDenom,
 		DefaultMinCommissionRate,
+		DefaultMinDelegation,
+		DefaultFlexiblePeriodType,
+		DefaultPeriods,
+		DefaultLockedTokenType,
+		DefaultTokenTypes,
+		DefaultSingularityHeight,
 	)
 }
 
@@ -101,6 +157,26 @@ func (p Params) Validate() error {
 	}
 
 	if err := validateHistoricalEntries(p.HistoricalEntries); err != nil {
+		return err
+	}
+
+	if err := validateFlexiblePeriodType(p.FlexiblePeriodType); err != nil {
+		return err
+	}
+
+	if err := validatePeriods(p.Periods); err != nil {
+		return err
+	}
+
+	if err := validateLockedTokenType(p.LockedTokenType); err != nil {
+		return err
+	}
+
+	if err := validateTokenTypes(p.TokenTypes); err != nil {
+		return err
+	}
+
+	if err := validateSingularityHeight(p.SingularityHeight); err != nil {
 		return err
 	}
 
@@ -199,6 +275,81 @@ func validateMinCommissionRate(i interface{}) error {
 	}
 	if v.GT(math.LegacyOneDec()) {
 		return fmt.Errorf("minimum commission rate cannot be greater than 100%%: %s", v)
+	}
+
+	return nil
+}
+
+func validateFlexiblePeriodType(i interface{}) error {
+	v, ok := i.(int32)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v < 0 {
+		return fmt.Errorf("invalid flexible period type: %d", v)
+	}
+
+	return nil
+}
+
+func validatePeriods(i interface{}) error {
+	periods, ok := i.([]Period)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	for _, period := range periods {
+		if period.PeriodType < 0 {
+			return fmt.Errorf("invalid period type: %d", period.PeriodType)
+		}
+		if !period.RewardsMultiplier.IsPositive() {
+			return fmt.Errorf("invalid period rewards multiplier: %s", period.RewardsMultiplier.String())
+		}
+	}
+
+	return nil
+}
+
+func validateLockedTokenType(i interface{}) error {
+	v, ok := i.(int32)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v < 0 {
+		return fmt.Errorf("invalid locked token type: %d", v)
+	}
+
+	return nil
+}
+
+func validateTokenTypes(i interface{}) error {
+	tokenTypes, ok := i.([]TokenTypeInfo)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	for _, tokenType := range tokenTypes {
+		if tokenType.TokenType < 0 {
+			return fmt.Errorf("invalid token type: %d", tokenType.TokenType)
+		}
+		if !tokenType.RewardsMultiplier.IsPositive() {
+			return fmt.Errorf("invalid token rewards multiplier: %s", tokenType.RewardsMultiplier.String())
+		}
+	}
+
+	return nil
+}
+
+func validateSingularityHeight(i interface{}) error {
+	v, ok := i.(uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	if v == 0 {
+		return fmt.Errorf("singularity height must be positive: %d", v)
 	}
 
 	return nil

@@ -22,11 +22,11 @@ import (
 )
 
 func TestValidatorTestEquivalent(t *testing.T) {
-	val1 := newValidator(t, valAddr1, pk1)
-	val2 := newValidator(t, valAddr1, pk1)
+	val1 := newValidator(t, valAddr1, pk1, 0)
+	val2 := newValidator(t, valAddr1, pk1, 0)
 	require.Equal(t, val1.String(), val2.String())
 
-	val2 = newValidator(t, valAddr2, pk2)
+	val2 = newValidator(t, valAddr2, pk2, 0)
 	require.NotEqual(t, val1.String(), val2.String())
 }
 
@@ -60,7 +60,7 @@ func TestUpdateDescription(t *testing.T) {
 }
 
 func TestABCIValidatorUpdate(t *testing.T) {
-	validator := newValidator(t, valAddr1, pk1)
+	validator := newValidator(t, valAddr1, pk1, 0)
 	abciVal := validator.ABCIValidatorUpdate(sdk.DefaultPowerReduction)
 	pk, err := validator.TmConsPublicKey()
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestABCIValidatorUpdate(t *testing.T) {
 }
 
 func TestABCIValidatorUpdateZero(t *testing.T) {
-	validator := newValidator(t, valAddr1, pk1)
+	validator := newValidator(t, valAddr1, pk1, 0)
 	abciVal := validator.ABCIValidatorUpdateZero()
 	pk, err := validator.TmConsPublicKey()
 	require.NoError(t, err)
@@ -103,9 +103,9 @@ func TestRemoveTokens(t *testing.T) {
 }
 
 func TestAddTokensValidatorBonded(t *testing.T) {
-	validator := newValidator(t, valAddr1, pk1)
+	validator := newValidator(t, valAddr1, pk1, 0)
 	validator = validator.UpdateStatus(types.Bonded)
-	validator, delShares := validator.AddTokensFromDel(math.NewInt(10))
+	validator, delShares, _ := validator.AddTokensFromDel(math.NewInt(10), math.LegacyOneDec())
 
 	assert.True(math.LegacyDecEq(t, math.LegacyNewDec(10), delShares))
 	assert.True(math.IntEq(t, math.NewInt(10), validator.BondedTokens()))
@@ -113,9 +113,9 @@ func TestAddTokensValidatorBonded(t *testing.T) {
 }
 
 func TestAddTokensValidatorUnbonding(t *testing.T) {
-	validator := newValidator(t, valAddr1, pk1)
+	validator := newValidator(t, valAddr1, pk1, 0)
 	validator = validator.UpdateStatus(types.Unbonding)
-	validator, delShares := validator.AddTokensFromDel(math.NewInt(10))
+	validator, delShares, _ := validator.AddTokensFromDel(math.NewInt(10), math.LegacyOneDec())
 
 	assert.True(math.LegacyDecEq(t, math.LegacyNewDec(10), delShares))
 	assert.Equal(t, types.Unbonding, validator.Status)
@@ -124,9 +124,9 @@ func TestAddTokensValidatorUnbonding(t *testing.T) {
 }
 
 func TestAddTokensValidatorUnbonded(t *testing.T) {
-	validator := newValidator(t, valAddr1, pk1)
+	validator := newValidator(t, valAddr1, pk1, 0)
 	validator = validator.UpdateStatus(types.Unbonded)
-	validator, delShares := validator.AddTokensFromDel(math.NewInt(10))
+	validator, delShares, _ := validator.AddTokensFromDel(math.NewInt(10), math.LegacyOneDec())
 
 	assert.True(math.LegacyDecEq(t, math.LegacyNewDec(10), delShares))
 	assert.Equal(t, types.Unbonded, validator.Status)
@@ -137,43 +137,46 @@ func TestAddTokensValidatorUnbonded(t *testing.T) {
 // TODO refactor to make simpler like the AddToken tests above
 func TestRemoveDelShares(t *testing.T) {
 	valA := types.Validator{
-		OperatorAddress: valAddr1.String(),
-		ConsensusPubkey: pk1Any,
-		Status:          types.Bonded,
-		Tokens:          math.NewInt(100),
-		DelegatorShares: math.LegacyNewDec(100),
+		OperatorAddress:        valAddr1.String(),
+		ConsensusPubkey:        pk1Any,
+		Status:                 types.Bonded,
+		Tokens:                 math.NewInt(100),
+		DelegatorShares:        math.LegacyNewDec(100),
+		DelegatorRewardsShares: math.LegacyNewDec(100),
+		SupportTokenType:       0,
+		RewardsTokens:          math.LegacyNewDecFromInt(math.NewInt(100)),
 	}
 
 	// Remove delegator shares
-	valB, coinsB := valA.RemoveDelShares(math.LegacyNewDec(10))
+	valB, coinsB := valA.RemoveDelShares(math.LegacyNewDec(10), math.LegacyOneDec())
 	require.Equal(t, int64(10), coinsB.Int64())
 	require.Equal(t, int64(90), valB.DelegatorShares.RoundInt64())
 	require.Equal(t, int64(90), valB.BondedTokens().Int64())
 
 	// specific case from random tests
 	validator := mkValidator(5102, math.LegacyNewDec(115))
-	_, tokens := validator.RemoveDelShares(math.LegacyNewDec(29))
+	_, tokens := validator.RemoveDelShares(math.LegacyNewDec(29), math.LegacyOneDec())
 
 	require.True(math.IntEq(t, math.NewInt(1286), tokens))
 }
 
 func TestAddTokensFromDel(t *testing.T) {
-	validator := newValidator(t, valAddr1, pk1)
+	validator := newValidator(t, valAddr1, pk1, 0)
 
-	validator, shares := validator.AddTokensFromDel(math.NewInt(6))
+	validator, shares, _ := validator.AddTokensFromDel(math.NewInt(6), math.LegacyOneDec())
 	require.True(math.LegacyDecEq(t, math.LegacyNewDec(6), shares))
 	require.True(math.LegacyDecEq(t, math.LegacyNewDec(6), validator.DelegatorShares))
 	require.True(math.IntEq(t, math.NewInt(6), validator.Tokens))
 
-	validator, shares = validator.AddTokensFromDel(math.NewInt(3))
+	validator, shares, _ = validator.AddTokensFromDel(math.NewInt(3), math.LegacyOneDec())
 	require.True(math.LegacyDecEq(t, math.LegacyNewDec(3), shares))
 	require.True(math.LegacyDecEq(t, math.LegacyNewDec(9), validator.DelegatorShares))
 	require.True(math.IntEq(t, math.NewInt(9), validator.Tokens))
 }
 
 func TestUpdateStatus(t *testing.T) {
-	validator := newValidator(t, valAddr1, pk1)
-	validator, _ = validator.AddTokensFromDel(math.NewInt(100))
+	validator := newValidator(t, valAddr1, pk1, 0)
+	validator, _, _ = validator.AddTokensFromDel(math.NewInt(100), math.LegacyOneDec())
 	require.Equal(t, types.Unbonded, validator.Status)
 	require.Equal(t, int64(100), validator.Tokens.Int64())
 
@@ -193,14 +196,14 @@ func TestUpdateStatus(t *testing.T) {
 func TestPossibleOverflow(t *testing.T) {
 	delShares := math.LegacyNewDec(391432570689183511).Quo(math.LegacyNewDec(40113011844664))
 	validator := mkValidator(2159, delShares)
-	newValidator, _ := validator.AddTokensFromDel(math.NewInt(71))
+	newValidator, _, _ := validator.AddTokensFromDel(math.NewInt(71), math.LegacyOneDec())
 
 	require.False(t, newValidator.DelegatorShares.IsNegative())
 	require.False(t, newValidator.Tokens.IsNegative())
 }
 
 func TestValidatorMarshalUnmarshalJSON(t *testing.T) {
-	validator := newValidator(t, valAddr1, pk1)
+	validator := newValidator(t, valAddr1, pk1, 0)
 	js, err := legacy.Cdc.MarshalJSON(validator)
 	require.NoError(t, err)
 	require.NotEmpty(t, js)
@@ -212,7 +215,7 @@ func TestValidatorMarshalUnmarshalJSON(t *testing.T) {
 }
 
 func TestValidatorSetInitialCommission(t *testing.T) {
-	val := newValidator(t, valAddr1, pk1)
+	val := newValidator(t, valAddr1, pk1, 0)
 	testCases := []struct {
 		validator   types.Validator
 		commission  types.Commission
@@ -253,7 +256,7 @@ func TestValidatorsSortDeterminism(t *testing.T) {
 	// Create random validator slice
 	for i := range vals {
 		pk := ed25519.GenPrivKey().PubKey()
-		vals[i] = newValidator(t, sdk.ValAddress(pk.Address()), pk)
+		vals[i] = newValidator(t, sdk.ValAddress(pk.Address()), pk, 0)
 	}
 
 	// Save sorted copy
@@ -278,7 +281,7 @@ func TestValidatorsSortCometBFT(t *testing.T) {
 	for i := range vals {
 		pk := ed25519.GenPrivKey().PubKey()
 		pk2 := ed25519.GenPrivKey().PubKey()
-		vals[i] = newValidator(t, sdk.ValAddress(pk2.Address()), pk)
+		vals[i] = newValidator(t, sdk.ValAddress(pk2.Address()), pk, 0)
 		vals[i].Status = types.Bonded
 		vals[i].Tokens = math.NewInt(rand.Int63())
 	}
@@ -310,7 +313,7 @@ func TestValidatorToCmt(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		pk := ed25519.GenPrivKey().PubKey()
-		val := newValidator(t, sdk.ValAddress(pk.Address()), pk)
+		val := newValidator(t, sdk.ValAddress(pk.Address()), pk, 0)
 		val.Status = types.Bonded
 		val.Tokens = math.NewInt(rand.Int63())
 		vals.Validators = append(vals.Validators, val)
@@ -336,18 +339,21 @@ func TestBondStatus(t *testing.T) {
 
 func mkValidator(tokens int64, shares math.LegacyDec) types.Validator {
 	return types.Validator{
-		OperatorAddress: valAddr1.String(),
-		ConsensusPubkey: pk1Any,
-		Status:          types.Bonded,
-		Tokens:          math.NewInt(tokens),
-		DelegatorShares: shares,
+		OperatorAddress:        valAddr1.String(),
+		ConsensusPubkey:        pk1Any,
+		Status:                 types.Bonded,
+		Tokens:                 math.NewInt(tokens),
+		DelegatorShares:        shares,
+		DelegatorRewardsShares: shares,
+		SupportTokenType:       0,
+		RewardsTokens:          math.LegacyNewDecFromInt(math.NewInt(tokens)),
 	}
 }
 
 // Creates a new validators and asserts the error check.
-func newValidator(t *testing.T, operator sdk.ValAddress, pubKey cryptotypes.PubKey) types.Validator {
+func newValidator(t *testing.T, operator sdk.ValAddress, pubKey cryptotypes.PubKey, supportTokenType int32) types.Validator {
 	t.Helper()
-	v, err := types.NewValidator(operator.String(), pubKey, types.Description{})
+	v, err := types.NewValidator(operator.String(), pubKey, types.Description{}, supportTokenType)
 	require.NoError(t, err)
 	return v
 }

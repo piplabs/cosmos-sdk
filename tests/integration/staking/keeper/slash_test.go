@@ -45,7 +45,7 @@ func bootstrapSlashTest(t *testing.T, power int64) (*fixture, []sdk.AccAddress, 
 
 	for i := int64(0); i < numVals; i++ {
 		validator := testutil.NewValidator(t, addrVals[i], PKs[i])
-		validator, _ = validator.AddTokensFromDel(amt)
+		validator, _, _ = validator.AddTokensFromDel(amt, math.LegacyOneDec())
 		validator = keeper.TestingUpdateValidator(f.stakingKeeper, f.sdkCtx, validator, true)
 		assert.NilError(t, f.stakingKeeper.SetValidatorByConsAddr(f.sdkCtx, validator))
 	}
@@ -120,14 +120,25 @@ func TestSlashRedelegation(t *testing.T) {
 
 	// set a redelegation with an expiration timestamp beyond which the
 	// redelegation shouldn't be slashed
-	rd := types.NewRedelegation(addrDels[0], addrVals[0], addrVals[1], 0,
+	rd := types.NewRedelegation(addrDels[0], addrVals[0], addrVals[1], types.FlexiblePeriodDelegationID, 0,
 		time.Unix(5, 0), math.NewInt(10), math.LegacyNewDec(10), 0, address.NewBech32Codec("cosmosvaloper"), address.NewBech32Codec("cosmos"))
 
 	assert.NilError(t, f.stakingKeeper.SetRedelegation(f.sdkCtx, rd))
 
 	// set the associated delegation
-	del := types.NewDelegation(addrDels[0].String(), addrVals[1].String(), math.LegacyNewDec(10))
+	del := types.NewDelegation(
+		addrDels[0].String(), addrVals[1].String(), math.LegacyNewDec(10), math.LegacyNewDec(10))
 	assert.NilError(t, f.stakingKeeper.SetDelegation(f.sdkCtx, del))
+	periodDel := types.NewPeriodDelegation(
+		addrDels[0].String(),
+		addrVals[1].String(),
+		types.FlexiblePeriodDelegationID,
+		math.LegacyNewDec(10),
+		math.LegacyNewDec(10),
+		types.DefaultFlexiblePeriodType,
+		time.Time{},
+	)
+	assert.NilError(t, f.stakingKeeper.SetPeriodDelegation(f.sdkCtx, addrDels[0], addrVals[1], periodDel))
 
 	// started redelegating prior to the current height, stake didn't contribute to infraction
 	validator, found := f.stakingKeeper.GetValidator(f.sdkCtx, addrVals[1])
@@ -395,13 +406,23 @@ func TestSlashWithRedelegation(t *testing.T) {
 
 	// set a redelegation
 	rdTokens := f.stakingKeeper.TokensFromConsensusPower(f.sdkCtx, 6)
-	rd := types.NewRedelegation(addrDels[0], addrVals[0], addrVals[1], 11, time.Unix(0, 0), rdTokens, math.LegacyNewDecFromInt(rdTokens), 0, address.NewBech32Codec("cosmosvaloper"), address.NewBech32Codec("cosmos"))
+	rd := types.NewRedelegation(addrDels[0], addrVals[0], addrVals[1], types.FlexiblePeriodDelegationID, 11, time.Unix(0, 0), rdTokens, math.LegacyNewDecFromInt(rdTokens), 0, address.NewBech32Codec("cosmosvaloper"), address.NewBech32Codec("cosmos"))
 	assert.NilError(t, f.stakingKeeper.SetRedelegation(f.sdkCtx, rd))
 
 	// set the associated delegation
-	del := types.NewDelegation(addrDels[0].String(), addrVals[1].String(), math.LegacyNewDecFromInt(rdTokens))
+	del := types.NewDelegation(
+		addrDels[0].String(), addrVals[1].String(), math.LegacyNewDecFromInt(rdTokens), math.LegacyNewDecFromInt(rdTokens))
 	assert.NilError(t, f.stakingKeeper.SetDelegation(f.sdkCtx, del))
-
+	periodDel := types.NewPeriodDelegation(
+		addrDels[0].String(),
+		addrVals[1].String(),
+		types.FlexiblePeriodDelegationID,
+		math.LegacyNewDecFromInt(rdTokens),
+		math.LegacyNewDecFromInt(rdTokens),
+		types.DefaultFlexiblePeriodType,
+		time.Time{},
+	)
+	assert.NilError(t, f.stakingKeeper.SetPeriodDelegation(f.sdkCtx, addrDels[0], addrVals[1], periodDel))
 	// update bonded tokens
 	bondedPool := f.stakingKeeper.GetBondedPool(f.sdkCtx)
 	notBondedPool := f.stakingKeeper.GetNotBondedPool(f.sdkCtx)
@@ -553,13 +574,23 @@ func TestSlashBoth(t *testing.T) {
 	// set a redelegation with expiration timestamp beyond which the
 	// redelegation shouldn't be slashed
 	rdATokens := f.stakingKeeper.TokensFromConsensusPower(f.sdkCtx, 6)
-	rdA := types.NewRedelegation(addrDels[0], addrVals[0], addrVals[1], 11, time.Unix(0, 0), rdATokens, math.LegacyNewDecFromInt(rdATokens), 0, address.NewBech32Codec("cosmosvaloper"), address.NewBech32Codec("cosmos"))
+	rdA := types.NewRedelegation(addrDels[0], addrVals[0], addrVals[1], types.FlexiblePeriodDelegationID, 11, time.Unix(0, 0), rdATokens, math.LegacyNewDecFromInt(rdATokens), 0, address.NewBech32Codec("cosmosvaloper"), address.NewBech32Codec("cosmos"))
 	assert.NilError(t, f.stakingKeeper.SetRedelegation(f.sdkCtx, rdA))
 
 	// set the associated delegation
-	delA := types.NewDelegation(addrDels[0].String(), addrVals[1].String(), math.LegacyNewDecFromInt(rdATokens))
+	delA := types.NewDelegation(
+		addrDels[0].String(), addrVals[1].String(), math.LegacyNewDecFromInt(rdATokens), math.LegacyNewDecFromInt(rdATokens))
 	assert.NilError(t, f.stakingKeeper.SetDelegation(f.sdkCtx, delA))
-
+	periodDel := types.NewPeriodDelegation(
+		addrDels[0].String(),
+		addrVals[1].String(),
+		types.FlexiblePeriodDelegationID,
+		math.LegacyNewDecFromInt(rdATokens),
+		math.LegacyNewDecFromInt(rdATokens),
+		types.DefaultFlexiblePeriodType,
+		time.Time{},
+	)
+	assert.NilError(t, f.stakingKeeper.SetPeriodDelegation(f.sdkCtx, addrDels[0], addrVals[1], periodDel))
 	// set an unbonding delegation with expiration timestamp (beyond which the
 	// unbonding delegation shouldn't be slashed)
 	ubdATokens := f.stakingKeeper.TokensFromConsensusPower(f.sdkCtx, 4)

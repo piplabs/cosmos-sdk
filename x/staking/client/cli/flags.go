@@ -28,6 +28,8 @@ const (
 
 	FlagMinSelfDelegation = "min-self-delegation"
 
+	FlagSupportTokenType = "support-token-type"
+
 	FlagGenesisFormat = "genesis-format"
 	FlagNodeID        = "node-id"
 	FlagIP            = "ip"
@@ -64,6 +66,13 @@ func FlagSetCommissionCreate() *flag.FlagSet {
 func FlagSetMinSelfDelegation() *flag.FlagSet {
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	fs.String(FlagMinSelfDelegation, "", "The minimum self delegation required on the validator")
+	return fs
+}
+
+// FlagSetSupportTokenType Returns the FlagSet used for support token type.
+func FlagSetSupportTokenType() *flag.FlagSet {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs.String(FlagSupportTokenType, "", "The token type supported by the validator")
 	return fs
 }
 

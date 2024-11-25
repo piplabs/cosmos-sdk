@@ -371,17 +371,19 @@ func (k Keeper) SlashRedelegation(ctx context.Context, srcValidator types.Valida
 			continue
 		}
 
-		delegation, err := k.GetDelegation(ctx, delegatorAddress, valDstAddr)
-		if err != nil {
-			// If deleted, delegation has zero shares, and we can't unbond any more
+		periodDelegation, err := k.GetPeriodDelegation(ctx, delegatorAddress, valDstAddr, entry.PeriodDelegationId)
+		if errors.Is(err, types.ErrNoPeriodDelegation) {
+			// If deleted, period delegation has zero shares, and we can't unbond any more
 			continue
+		} else if err != nil {
+			return math.ZeroInt(), err
 		}
 
-		if sharesToUnbond.GT(delegation.Shares) {
-			sharesToUnbond = delegation.Shares
+		if sharesToUnbond.GT(periodDelegation.Shares) {
+			sharesToUnbond = periodDelegation.Shares
 		}
 
-		tokensToBurn, err := k.Unbond(ctx, delegatorAddress, valDstAddr, sharesToUnbond)
+		tokensToBurn, err := k.Unbond(ctx, delegatorAddress, valDstAddr, true, entry.PeriodDelegationId, sharesToUnbond)
 		if err != nil {
 			return math.ZeroInt(), err
 		}

@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"testing"
+	"time"
 
 	"gotest.tools/v3/assert"
 
@@ -40,11 +41,11 @@ func createValidators(t *testing.T, f *fixture, powers []int64) ([]sdk.AccAddres
 	valAddrs := simtestutil.ConvertAddrsToValAddrs(addrs)
 	pks := simtestutil.CreateTestPubKeys(5)
 
-	val1, err := stakingtypes.NewValidator(valAddrs[0].String(), pks[0], stakingtypes.Description{})
+	val1, err := stakingtypes.NewValidator(valAddrs[0].String(), pks[0], stakingtypes.Description{}, 0)
 	assert.NilError(t, err)
-	val2, err := stakingtypes.NewValidator(valAddrs[1].String(), pks[1], stakingtypes.Description{})
+	val2, err := stakingtypes.NewValidator(valAddrs[1].String(), pks[1], stakingtypes.Description{}, 0)
 	assert.NilError(t, err)
-	val3, err := stakingtypes.NewValidator(valAddrs[2].String(), pks[2], stakingtypes.Description{})
+	val3, err := stakingtypes.NewValidator(valAddrs[2].String(), pks[2], stakingtypes.Description{}, 0)
 	assert.NilError(t, err)
 
 	f.stakingKeeper.SetValidator(f.ctx, val1)
@@ -57,9 +58,9 @@ func createValidators(t *testing.T, f *fixture, powers []int64) ([]sdk.AccAddres
 	f.stakingKeeper.SetNewValidatorByPowerIndex(f.ctx, val2)
 	f.stakingKeeper.SetNewValidatorByPowerIndex(f.ctx, val3)
 
-	_, _ = f.stakingKeeper.Delegate(f.ctx, addrs[0], f.stakingKeeper.TokensFromConsensusPower(f.ctx, powers[0]), stakingtypes.Unbonded, val1, true)
-	_, _ = f.stakingKeeper.Delegate(f.ctx, addrs[1], f.stakingKeeper.TokensFromConsensusPower(f.ctx, powers[1]), stakingtypes.Unbonded, val2, true)
-	_, _ = f.stakingKeeper.Delegate(f.ctx, addrs[2], f.stakingKeeper.TokensFromConsensusPower(f.ctx, powers[2]), stakingtypes.Unbonded, val3, true)
+	_, _, _ = f.stakingKeeper.Delegate(f.ctx, addrs[0], f.stakingKeeper.TokensFromConsensusPower(f.ctx, powers[0]), stakingtypes.Unbonded, val1, true, stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0))
+	_, _, _ = f.stakingKeeper.Delegate(f.ctx, addrs[1], f.stakingKeeper.TokensFromConsensusPower(f.ctx, powers[1]), stakingtypes.Unbonded, val2, true, stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0))
+	_, _, _ = f.stakingKeeper.Delegate(f.ctx, addrs[2], f.stakingKeeper.TokensFromConsensusPower(f.ctx, powers[2]), stakingtypes.Unbonded, val3, true, stakingtypes.FlexiblePeriodDelegationID, stakingtypes.DefaultFlexiblePeriodType, time.Unix(0, 0))
 
 	f.stakingKeeper.EndBlocker(f.ctx)
 
