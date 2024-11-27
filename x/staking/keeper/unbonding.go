@@ -10,6 +10,48 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
+func (k Keeper) GetOldUnbondingID(ctx context.Context) (unbondingID uint64, err error) {
+	store := k.storeService.OpenKVStore(ctx)
+	// Old UnbondingID used same key as period delegation
+	bz, err := store.Get(types.PeriodDelegationKey)
+	if err != nil {
+		return 0, err
+	}
+
+	if bz != nil {
+		unbondingID = binary.BigEndian.Uint64(bz)
+	}
+
+	return unbondingID, err
+}
+
+func (k Keeper) GetUnbondingID(ctx context.Context) (unbondingID uint64, err error) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get(types.UnbondingIDKey)
+	if err != nil {
+		return 0, err
+	}
+
+	if bz != nil {
+		unbondingID = binary.BigEndian.Uint64(bz)
+	}
+
+	return unbondingID, err
+}
+
+func (k Keeper) SetUnbondingID(ctx context.Context, unbondingID uint64) error {
+	store := k.storeService.OpenKVStore(ctx)
+	// Convert into bytes for storage
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, unbondingID)
+
+	if err := store.Set(types.UnbondingIDKey, bz); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // IncrementUnbondingID increments and returns a unique ID for an unbonding operation
 func (k Keeper) IncrementUnbondingID(ctx context.Context) (unbondingID uint64, err error) {
 	store := k.storeService.OpenKVStore(ctx)
