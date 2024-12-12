@@ -10,27 +10,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-func (k Keeper) GetOldUnbondingID(ctx context.Context) (unbondingID uint64, err error) {
-	store := k.storeService.OpenKVStore(ctx)
-	// Old UnbondingID used same key as period delegation
-	bz, err := store.Get(types.PeriodDelegationKey)
-	if err != nil {
-		return 0, err
-	}
-
-	if bz != nil {
-		unbondingID = binary.BigEndian.Uint64(bz)
-	}
-
-	return unbondingID, err
-}
-
-func (k Keeper) RemoveOldUnbondingID(ctx context.Context) error {
-	store := k.storeService.OpenKVStore(ctx)
-	// Old UnbondingID used same key as period delegation, which is not used independently.
-	return store.Delete(types.PeriodDelegationKey)
-}
-
 func (k Keeper) GetUnbondingID(ctx context.Context) (unbondingID uint64, err error) {
 	store := k.storeService.OpenKVStore(ctx)
 	bz, err := store.Get(types.UnbondingIDKey)

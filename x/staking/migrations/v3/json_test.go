@@ -56,12 +56,12 @@ func TestMigrateJSON(t *testing.T) {
 				"rewards_multiplier": "1.000000000000000000"
 			},
 			{
-				"duration": "2592000s",
+				"duration": "7776000s",
 				"period_type": 1,
 				"rewards_multiplier": "1.051000000000000000"
 			},
 			{
-				"duration": "31536000s",
+				"duration": "31104000s",
 				"period_type": 2,
 				"rewards_multiplier": "1.160000000000000000"
 			},
