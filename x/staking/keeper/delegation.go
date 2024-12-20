@@ -1323,62 +1323,62 @@ func (k Keeper) CompleteUnbonding(ctx context.Context, delAddr sdk.AccAddress, v
 func (k Keeper) BeginRedelegation(
 	ctx context.Context, delAddr sdk.AccAddress, valSrcAddr, valDstAddr sdk.ValAddress,
 	periodDelegationId string, sharesAmount math.LegacyDec,
-) (completionTime time.Time, err error) {
+) (time.Time, math.Int, error) {
 	if bytes.Equal(valSrcAddr, valDstAddr) {
-		return time.Time{}, types.ErrSelfRedelegation
+		return time.Time{}, math.Int{}, types.ErrSelfRedelegation
 	}
 
 	dstValidator, err := k.GetValidator(ctx, valDstAddr)
 	if errors.Is(err, types.ErrNoValidatorFound) {
-		return time.Time{}, types.ErrBadRedelegationDst
+		return time.Time{}, math.Int{}, types.ErrBadRedelegationDst
 	} else if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	srcValidator, err := k.GetValidator(ctx, valSrcAddr)
 	if errors.Is(err, types.ErrNoValidatorFound) {
-		return time.Time{}, types.ErrBadRedelegationSrc
+		return time.Time{}, math.Int{}, types.ErrBadRedelegationSrc
 	} else if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	// check if srcVal has the same token type as dstVal
 	if srcValidator.SupportTokenType != dstValidator.SupportTokenType {
-		return time.Time{}, types.ErrTokenTypeMismatch
+		return time.Time{}, math.Int{}, types.ErrTokenTypeMismatch
 	}
 
 	// check if this is a transitive redelegation
 	hasRecRedel, err := k.HasReceivingRedelegation(ctx, delAddr, valSrcAddr)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	if hasRecRedel {
-		return time.Time{}, types.ErrTransitiveRedelegation
+		return time.Time{}, math.Int{}, types.ErrTransitiveRedelegation
 	}
 
 	hasMaxRedels, err := k.HasMaxRedelegationEntries(ctx, delAddr, valSrcAddr, valDstAddr)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	if hasMaxRedels {
-		return time.Time{}, types.ErrMaxRedelegationEntries
+		return time.Time{}, math.Int{}, types.ErrMaxRedelegationEntries
 	}
 
 	// check period delegation existence
 	periodDelegation, err := k.GetPeriodDelegation(ctx, delAddr, valSrcAddr, periodDelegationId)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	returnAmount, err := k.Unbond(ctx, delAddr, valSrcAddr, true, periodDelegationId, sharesAmount)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	if returnAmount.IsZero() {
-		return time.Time{}, types.ErrTinyRedelegationAmount
+		return time.Time{}, math.Int{}, types.ErrTinyRedelegationAmount
 	}
 
 	sharesCreated, _, err := k.Delegate(
@@ -1387,17 +1387,17 @@ func (k Keeper) BeginRedelegation(
 		periodDelegation.EndTime,
 	)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	// create the unbonding delegation
 	completionTime, height, completeNow, err := k.getBeginInfo(ctx, valSrcAddr)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	if completeNow { // no need to create the redelegation object
-		return completionTime, nil
+		return completionTime, returnAmount, nil
 	}
 
 	red, err := k.SetRedelegationEntry(
@@ -1405,15 +1405,15 @@ func (k Keeper) BeginRedelegation(
 		height, completionTime, returnAmount, sharesAmount, sharesCreated,
 	)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
 	err = k.InsertRedelegationQueue(ctx, red, completionTime)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, math.Int{}, err
 	}
 
-	return completionTime, nil
+	return completionTime, returnAmount, nil
 }
 
 // CompleteRedelegation completes the redelegations of all mature entries in the
