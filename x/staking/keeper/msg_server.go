@@ -256,12 +256,14 @@ func (k msgServer) BeginRedelegate(ctx context.Context, msg *types.MsgBeginRedel
 		return nil, err
 	}
 
-	completionTime, err := k.BeginRedelegation(
+	completionTime, redelegatedAmt, err := k.BeginRedelegation(
 		ctx, delegatorAddress, valSrcAddr, valDstAddr, msg.PeriodDelegationId, shares,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	redelegatedCoin := sdk.NewCoin(msg.Amount.Denom, redelegatedAmt)
 
 	if msg.Amount.Amount.IsInt64() {
 		defer func() {
@@ -280,13 +282,14 @@ func (k msgServer) BeginRedelegate(ctx context.Context, msg *types.MsgBeginRedel
 			types.EventTypeRedelegate,
 			sdk.NewAttribute(types.AttributeKeySrcValidator, msg.ValidatorSrcAddress),
 			sdk.NewAttribute(types.AttributeKeyDstValidator, msg.ValidatorDstAddress),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, redelegatedCoin.String()),
 			sdk.NewAttribute(types.AttributeKeyCompletionTime, completionTime.Format(time.RFC3339)),
 		),
 	})
 
 	return &types.MsgBeginRedelegateResponse{
 		CompletionTime: completionTime,
+		Amount:         redelegatedCoin,
 	}, nil
 }
 

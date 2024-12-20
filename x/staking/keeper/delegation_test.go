@@ -976,7 +976,7 @@ func (s *KeeperTestSuite) TestRedelegateToSameValidator() {
 		time.Time{},
 	)))
 
-	_, err := keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[0], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDec(5))
+	_, _, err := keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[0], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDec(5))
 	require.Error(err)
 }
 
@@ -1025,12 +1025,12 @@ func (s *KeeperTestSuite) TestRedelegationMaxEntries() {
 	var completionTime time.Time
 	for i := uint32(0); i < maxEntries; i++ {
 		var err error
-		completionTime, err = keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDec(1))
+		completionTime, _, err = keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDec(1))
 		require.NoError(err)
 	}
 
 	// an additional redelegation should fail due to max entries
-	_, err = keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDec(1))
+	_, _, err = keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDec(1))
 	require.Error(err)
 
 	// mature redelegations
@@ -1039,7 +1039,7 @@ func (s *KeeperTestSuite) TestRedelegationMaxEntries() {
 	require.NoError(err)
 
 	// redelegation should work again
-	_, err = keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDec(1))
+	_, _, err = keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDec(1))
 	require.NoError(err)
 }
 
@@ -1103,7 +1103,7 @@ func (s *KeeperTestSuite) TestRedelegateSelfDelegation() {
 		time.Time{},
 	)))
 
-	_, err := keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(delTokens))
+	_, _, err := keeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(delTokens))
 	require.NoError(err)
 
 	// end block
@@ -1208,7 +1208,7 @@ func (s *KeeperTestSuite) TestRedelegateFromUnbondingValidator() {
 	// unbond some of the other delegation's shares
 	redelegateTokens := keeper.TokensFromConsensusPower(ctx, 6)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName, gomock.Any())
-	_, err = keeper.BeginRedelegation(ctx, addrDels[1], addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(redelegateTokens))
+	_, _, err = keeper.BeginRedelegation(ctx, addrDels[1], addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(redelegateTokens))
 	require.NoError(err)
 
 	// retrieve the unbonding delegation
@@ -1304,7 +1304,7 @@ func (s *KeeperTestSuite) TestRedelegateFromUnbondedValidator() {
 	// redelegate some of the delegation's shares
 	redelegationTokens := keeper.TokensFromConsensusPower(ctx, 6)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName, gomock.Any())
-	_, err = keeper.BeginRedelegation(ctx, addrDels[1], addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(redelegationTokens))
+	_, _, err = keeper.BeginRedelegation(ctx, addrDels[1], addrVals[0], addrVals[1], stakingtypes.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(redelegationTokens))
 	require.NoError(err)
 
 	// no red should have been found
