@@ -151,3 +151,44 @@ func TestGetHistoricalInfoKey(t *testing.T) {
 		})
 	}
 }
+
+func TestKeyPrefixUniqueness(t *testing.T) {
+	prefixes := [][]byte{
+		types.LastValidatorPowerKey,
+		types.LastTotalPowerKey,
+		types.ValidatorsKey,
+		types.ValidatorsByConsAddrKey,
+		types.ValidatorsByPowerIndexKey,
+		types.DelegationKey,
+		types.UnbondingDelegationKey,
+		types.UnbondingDelegationByValIndexKey,
+		types.RedelegationKey,
+		types.RedelegationByValSrcIndexKey,
+		types.RedelegationByValDstIndexKey,
+		types.PeriodDelegationKey,
+		types.UnbondingIndexKey,
+		types.UnbondingTypeKey,
+		types.UnbondingIDKey,
+		types.UnbondingQueueKey,
+		types.RedelegationQueueKey,
+		types.ValidatorQueueKey,
+		types.HistoricalInfoKey,
+		types.ValidatorUpdatesKey,
+		types.ParamsKey,
+		types.DelegationByValIndexKey,
+	}
+
+	seen := make(map[byte][]byte)
+
+	for _, prefix := range prefixes {
+		require.NotEmpty(t, prefix, "found empty prefix")
+		prefixByte := prefix[0]
+
+		if existing, exists := seen[prefixByte]; exists {
+			t.Fatalf("duplicate prefix byte 0x%02x found between prefixes 0x%x and 0x%x",
+				prefixByte, existing, prefix)
+		}
+
+		seen[prefixByte] = prefix
+	}
+}
