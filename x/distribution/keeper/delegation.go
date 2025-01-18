@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
 	"cosmossdk.io/math"
 
@@ -171,14 +170,18 @@ func (k Keeper) CalculateDelegationRewards(ctx context.Context, val stakingtypes
 		// however any greater amount should be considered a breach in expected
 		// behavior.
 		marginOfErr := math.LegacySmallestDec().MulInt64(3)
-		if rewardsStake.LTE(currentRewardsStake.Add(marginOfErr)) {
-			rewardsStake = currentRewardsStake
-		} else {
-			panic(fmt.Sprintf("calculated final rewards stake for delegator %s greater than current rewards stake"+
-				"\n\tfinal rewards stake:\t%s"+
-				"\n\tcurrent rewards stake:\t%s",
-				del.GetDelegatorAddr(), rewardsStake, currentRewardsStake))
+		if rewardsStake.GT(currentRewardsStake.Add(marginOfErr)) {
+			k.Logger(ctx).Error(
+				"[MONITOR] Calculated final rewards stake for delegator greater than current rewards stake",
+				"delegator", del.GetDelegatorAddr(),
+				"validator", del.GetValidatorAddr(),
+				"calculated_rewards_stake", rewardsStake.String(),
+				"current_rewards_stake", currentRewardsStake.String(),
+				"start_height", startingHeight,
+				"end_height", endingHeight,
+			)
 		}
+		rewardsStake = currentRewardsStake.TruncateDec()
 	}
 
 	// calculate rewards for final period
