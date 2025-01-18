@@ -984,8 +984,10 @@ func (k Keeper) Delegate(
 		}
 	}
 
-	_, newShares, newRewardsShares, err = k.AddValidatorTokensAndShares(
-		ctx, validator, bondAmt, tokenTypeInfo.RewardsMultiplier.Mul(periodInfo.RewardsMultiplier),
+	rewardsTokenAmt := math.LegacyNewDecFromInt(bondAmt).Mul(tokenTypeInfo.RewardsMultiplier.Mul(periodInfo.RewardsMultiplier))
+
+	validator, newShares, newRewardsShares, err = k.AddValidatorTokensAndShares(
+		ctx, validator, bondAmt, rewardsTokenAmt,
 	)
 	if err != nil {
 		return math.LegacyZeroDec(), math.LegacyZeroDec(), err
@@ -1010,6 +1012,26 @@ func (k Keeper) Delegate(
 		return math.LegacyZeroDec(), math.LegacyZeroDec(), err
 	}
 
+	k.Logger(ctx).Debug(
+		"Delegate Info",
+		"delegator_addr", delAddr.String(),
+		"validator_operator_addr", validator.OperatorAddress,
+		"period_delegation_id", periodDelID,
+		"subtract_account", subtractAccount,
+		"token_amount", bondAmt.String(),
+		"rewards_token_amount", rewardsTokenAmt.String(),
+		"delegate_shares", newShares.String(),
+		"delegate_rewards_shares", newRewardsShares.String(),
+		"period_delegation_shares", periodDelegation.Shares.String(),
+		"period_delegation_rewards_shares", periodDelegation.RewardsShares.String(),
+		"delegation_shares", delegation.Shares.String(),
+		"delegation_rewards_shares", delegation.RewardsShares.String(),
+		"validator_tokens", validator.Tokens.String(),
+		"validator_rewards_tokens", validator.RewardsTokens.String(),
+		"validator_shares", validator.DelegatorShares.String(),
+		"validator_rewards_shares", validator.DelegatorRewardsShares.String(),
+	)
+
 	return newShares, newRewardsShares, nil
 }
 
@@ -1017,7 +1039,7 @@ func (k Keeper) Delegate(
 // The forceUnbond is true iff from a redelegation or slashing.
 func (k Keeper) Unbond(
 	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress,
-	forceUnbond bool, periodDelegationId string, shares math.LegacyDec,
+	forceUnbond bool, periodDelegationId string, shares math.LegacyDec, rewardsShares math.LegacyDec,
 ) (amount math.Int, err error) {
 	// check if a delegation object exists in the store
 	delegation, err := k.GetDelegation(ctx, delAddr, valAddr)
@@ -1028,10 +1050,6 @@ func (k Keeper) Unbond(
 	}
 	// check if the period delegation exists
 	periodDelegation, err := k.GetPeriodDelegation(ctx, delAddr, valAddr, periodDelegationId)
-	if err != nil {
-		return amount, err
-	}
-	periodInfo, err := k.GetPeriodInfo(ctx, periodDelegation.PeriodType)
 	if err != nil {
 		return amount, err
 	}
@@ -1057,11 +1075,6 @@ func (k Keeper) Unbond(
 	if err != nil {
 		return amount, err
 	}
-	tokenTypeInfo, err := k.GetTokenTypeInfo(ctx, validator.SupportTokenType)
-	if err != nil {
-		return amount, err
-	}
-	rewardsMultiplier := tokenTypeInfo.RewardsMultiplier.Mul(periodInfo.RewardsMultiplier)
 
 	// ensure that we have enough shares to remove
 	if delegation.Shares.LT(shares) {
@@ -1074,7 +1087,6 @@ func (k Keeper) Unbond(
 		)
 	}
 	// ensure that we have enough rewards shares to remove
-	rewardsShares := shares.Mul(rewardsMultiplier)
 	if delegation.RewardsShares.LT(rewardsShares) {
 		return amount, errorsmod.Wrap(types.ErrNotEnoughDelegationRewardsShares, delegation.RewardsShares.String())
 	}
@@ -1145,7 +1157,7 @@ func (k Keeper) Unbond(
 
 	// remove the shares and coins from the validator
 	// NOTE that the amount is later (in keeper.Delegation) moved between staking module pools
-	validator, amount, err = k.RemoveValidatorTokensAndShares(ctx, validator, shares, rewardsMultiplier)
+	validator, amount, err = k.RemoveValidatorTokensAndShares(ctx, validator, shares, rewardsShares)
 	if err != nil {
 		return amount, err
 	}
@@ -1156,6 +1168,25 @@ func (k Keeper) Unbond(
 			return amount, err
 		}
 	}
+
+	k.Logger(ctx).Debug(
+		"Unbond Info",
+		"delegator_addr", delAddr.String(),
+		"validator_addr", valAddr.String(),
+		"force_unbond", forceUnbond,
+		"period_delegation_id", periodDelegationId,
+		"unbond_token_amount", amount.String(),
+		"unbond_shares", shares.String(),
+		"unbond_rewards_shares", rewardsShares.String(),
+		"period_delegation_shares", periodDelegation.Shares.String(),
+		"period_delegation_rewards_shares", periodDelegation.RewardsShares.String(),
+		"delegation_shares", delegation.Shares.String(),
+		"delegation_rewards_shares", delegation.RewardsShares.String(),
+		"validator_tokens", validator.Tokens.String(),
+		"validator_rewards_tokens", validator.RewardsTokens.String(),
+		"validator_shares", validator.DelegatorShares.String(),
+		"validator_shares", validator.DelegatorRewardsShares.String(),
+	)
 
 	return amount, nil
 }
@@ -1202,7 +1233,8 @@ func (k Keeper) getBeginInfo(
 // an unbonding object and inserting it into the unbonding queue which will be
 // processed during the staking EndBlocker.
 func (k Keeper) Undelegate(
-	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, periodDelegationId string, sharesAmount math.LegacyDec,
+	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress,
+	periodDelegationId string, sharesAmount math.LegacyDec, rewardsSharesAmount math.LegacyDec,
 ) (time.Time, math.Int, error) {
 	validator, err := k.GetValidator(ctx, valAddr)
 	if err != nil {
@@ -1217,7 +1249,7 @@ func (k Keeper) Undelegate(
 		return time.Time{}, math.Int{}, types.ErrMaxUnbondingDelegationEntries
 	}
 
-	returnAmount, err := k.Unbond(ctx, delAddr, valAddr, false, periodDelegationId, sharesAmount)
+	returnAmount, err := k.Unbond(ctx, delAddr, valAddr, false, periodDelegationId, sharesAmount, rewardsSharesAmount)
 	if err != nil {
 		return time.Time{}, math.Int{}, err
 	}
@@ -1322,7 +1354,7 @@ func (k Keeper) CompleteUnbonding(ctx context.Context, delAddr sdk.AccAddress, v
 // record.
 func (k Keeper) BeginRedelegation(
 	ctx context.Context, delAddr sdk.AccAddress, valSrcAddr, valDstAddr sdk.ValAddress,
-	periodDelegationId string, sharesAmount math.LegacyDec,
+	periodDelegationId string, sharesAmount math.LegacyDec, rewardsSharesAmount math.LegacyDec,
 ) (time.Time, math.Int, error) {
 	if bytes.Equal(valSrcAddr, valDstAddr) {
 		return time.Time{}, math.Int{}, types.ErrSelfRedelegation
@@ -1372,7 +1404,7 @@ func (k Keeper) BeginRedelegation(
 		return time.Time{}, math.Int{}, err
 	}
 
-	returnAmount, err := k.Unbond(ctx, delAddr, valSrcAddr, true, periodDelegationId, sharesAmount)
+	returnAmount, err := k.Unbond(ctx, delAddr, valSrcAddr, true, periodDelegationId, sharesAmount, rewardsSharesAmount)
 	if err != nil {
 		return time.Time{}, math.Int{}, err
 	}
@@ -1471,15 +1503,15 @@ func (k Keeper) CompleteRedelegation(
 // amount of respective shares is returned, otherwise an error is returned.
 func (k Keeper) ValidateUnbondAmount(
 	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, periodDelegationId string, amt math.Int,
-) (shares math.LegacyDec, err error) {
+) (shares math.LegacyDec, rewardsShares math.LegacyDec, err error) {
 	params, err := k.GetParams(ctx)
 	if err != nil {
-		return shares, err
+		return shares, rewardsShares, err
 	}
 
 	validator, err := k.GetValidator(ctx, valAddr)
 	if err != nil {
-		return shares, err
+		return shares, rewardsShares, err
 	}
 
 	if amt.GT(validator.GetTokens()) {
@@ -1488,12 +1520,12 @@ func (k Keeper) ValidateUnbondAmount(
 
 	periodDelegation, err := k.GetPeriodDelegation(ctx, delAddr, valAddr, periodDelegationId)
 	if err != nil {
-		return shares, err
+		return shares, rewardsShares, err
 	}
 
 	shares, err = validator.SharesFromTokens(amt)
 	if err != nil {
-		return shares, err
+		return shares, rewardsShares, err
 	}
 
 	// unbond all shares for following conditions:
@@ -1502,10 +1534,15 @@ func (k Keeper) ValidateUnbondAmount(
 	if shares.GT(periodDelegation.Shares) {
 		shares = periodDelegation.Shares
 	}
-	tokenRemaining := validator.TokensFromShares(periodDelegation.Shares.Sub(shares))
-	if tokenRemaining.LT(math.LegacyNewDecFromInt(params.MinDelegation)) {
+	tokenRemaining := validator.TokensFromShares(periodDelegation.Shares.Sub(shares)).TruncateInt()
+	if tokenRemaining.LT(params.MinDelegation) {
 		shares = periodDelegation.Shares
 	}
 
-	return shares, nil
+	rewardsShares = (shares.Mul(periodDelegation.RewardsShares)).Quo(periodDelegation.Shares)
+	if shares.GT(periodDelegation.RewardsShares) {
+		rewardsShares = periodDelegation.RewardsShares
+	}
+
+	return shares, rewardsShares, nil
 }

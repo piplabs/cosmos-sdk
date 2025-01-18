@@ -15,8 +15,7 @@ import (
 // GetOrCreatePeriodDelegation gets the period delegation or creates a new one.
 func (k Keeper) GetOrCreatePeriodDelegation(
 	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress,
-	periodDelegationID string,
-	periodType int32, endTime time.Time,
+	periodDelegationID string, periodType int32, endTime time.Time,
 ) (types.PeriodDelegation, error) {
 	periodDelegation, err := k.GetPeriodDelegation(ctx, delAddr, valAddr, periodDelegationID)
 	if errors.Is(err, types.ErrNoPeriodDelegation) {

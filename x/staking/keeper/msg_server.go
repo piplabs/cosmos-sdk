@@ -249,15 +249,26 @@ func (k msgServer) BeginRedelegate(ctx context.Context, msg *types.MsgBeginRedel
 		return nil, sdkerrors.ErrInvalidAddress.Wrapf("invalid delegator address: %s", err)
 	}
 
-	shares, err := k.ValidateUnbondAmount(
+	shares, rewardsShares, err := k.ValidateUnbondAmount(
 		ctx, delegatorAddress, valSrcAddr, msg.PeriodDelegationId, msg.Amount.Amount,
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	k.Logger(ctx).Debug(
+		"Redelegate Info",
+		"delegator_addr", sdk.AccAddress(delegatorAddress).String(),
+		"src_validator_addr", sdk.ValAddress(valSrcAddr).String(),
+		"dst_validator_addr", sdk.ValAddress(valDstAddr).String(),
+		"period_delegation_id", msg.PeriodDelegationId,
+		"token_amount", msg.Amount.Amount.String(),
+		"shares", shares.String(),
+		"rewards_shares", rewardsShares.String(),
+	)
+
 	completionTime, redelegatedAmt, err := k.BeginRedelegation(
-		ctx, delegatorAddress, valSrcAddr, valDstAddr, msg.PeriodDelegationId, shares,
+		ctx, delegatorAddress, valSrcAddr, valDstAddr, msg.PeriodDelegationId, shares, rewardsShares,
 	)
 	if err != nil {
 		return nil, err
@@ -309,14 +320,24 @@ func (k msgServer) Undelegate(ctx context.Context, msg *types.MsgUndelegate) (*t
 		return nil, sdkerrors.ErrInvalidAddress.Wrapf("invalid delegator address: %s", err)
 	}
 
-	shares, err := k.ValidateUnbondAmount(
+	shares, rewardsShares, err := k.ValidateUnbondAmount(
 		ctx, delegatorAddress, validatorAddress, msg.PeriodDelegationId, msg.Amount.Amount,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	completionTime, undelegatedAmt, err := k.Keeper.Undelegate(ctx, delegatorAddress, validatorAddress, msg.PeriodDelegationId, shares)
+	k.Logger(ctx).Debug(
+		"Undelegate Info",
+		"delegator_addr", sdk.AccAddress(delegatorAddress).String(),
+		"validator_addr", sdk.ValAddress(validatorAddress).String(),
+		"period_delegation_id", msg.PeriodDelegationId,
+		"token_amount", msg.Amount.Amount.String(),
+		"shares", shares.String(),
+		"rewards_shares", rewardsShares.String(),
+	)
+
+	completionTime, undelegatedAmt, err := k.Keeper.Undelegate(ctx, delegatorAddress, validatorAddress, msg.PeriodDelegationId, shares, rewardsShares)
 	if err != nil {
 		return nil, err
 	}

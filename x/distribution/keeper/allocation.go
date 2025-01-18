@@ -52,7 +52,7 @@ func (k Keeper) AllocateTokens(ctx context.Context, bondedVotes []abci.VoteInfo)
 		totalRewardsTokens = totalRewardsTokens.Add(val.GetRewardsTokens())
 	}
 
-	if totalPreviousPower == 0 {
+	if totalPreviousPower == 0 || totalRewardsTokens.IsZero() {
 		feePool.Ubi = feePool.Ubi.Add(feesCollected...)
 		return k.FeePool.Set(ctx, feePool)
 	}
