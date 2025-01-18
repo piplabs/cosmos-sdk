@@ -39,7 +39,7 @@ func (k Keeper) initializeDelegation(ctx context.Context, val sdk.ValAddress, de
 	// calculate delegation rewards stake in tokens
 	// we don't store directly, so multiply delegation rewards shares * (tokens per rewards share)
 	// note: necessary to truncate so we don't allow withdrawing more rewards than owed
-	rewardsStake := validator.RewardsTokensFromRewardsShares(delegation.GetRewardsShares())
+	rewardsStake := validator.RewardsTokensFromRewardsSharesTruncated(delegation.GetRewardsShares())
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	return k.SetDelegatorStartingInfo(ctx, val, del, types.NewDelegatorStartingInfo(previousPeriod, rewardsStake, uint64(sdkCtx.BlockHeight())))
 }

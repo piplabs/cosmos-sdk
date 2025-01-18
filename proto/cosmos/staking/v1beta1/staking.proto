@@ -79,10 +79,13 @@ message Description {
   string details = 5;
 }
 
+// TokenTypeInfo defines the token type information.
 message TokenTypeInfo {
   option (gogoproto.equal) = true;
 
-  int32  token_type         = 1;
+  // token_type defines the token type.
+  int32 token_type = 1;
+  // rewards_multiplier defines the rewards multiplier for the token type.
   string rewards_multiplier = 2 [
     (cosmos_proto.scalar)  = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -147,7 +150,7 @@ message Validator {
   // list of unbonding ids, each uniquely identifing an unbonding of this validator
   repeated uint64 unbonding_ids = 13;
 
-  int32 support_token_type = 14 [(amino.dont_omitempty) = true];
+  int32 support_token_type = 14;
 
   string rewards_tokens = 15 [
     (cosmos_proto.scalar)  = "cosmos.Dec",
@@ -233,6 +236,7 @@ message Period {
   ];
 }
 
+// PeriodDelegation defines the period delegation information.
 message PeriodDelegation {
   // delegator_address is the encoded address of the delegator.
   string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
@@ -253,7 +257,7 @@ message PeriodDelegation {
     (gogoproto.nullable)   = false
   ];
 
-  int32 period_type = 6 [(amino.dont_omitempty) = true];
+  int32 period_type = 6;
 
   google.protobuf.Timestamp end_time = 7
       [(gogoproto.nullable) = false, (amino.dont_omitempty) = true, (gogoproto.stdtime) = true];
