@@ -13,17 +13,10 @@ on:
       - "go.mod"
       - "go.sum"
 
-permissions:
-  id-token: write
-  contents: read
-  pull-requests: write
-  actions: write
-  security-events: write
-
 jobs:
   Gosec:
-    # permissions:
-    #   security-events: write
+    permissions:
+      security-events: write
 
     runs-on: ubuntu-latest
     env:
@@ -38,8 +31,8 @@ jobs:
           # we let the report trigger content trigger a failure using the GitHub Security features.
           args: "-exclude=G101,G107 -no-fail -fmt sarif -out results.sarif ./..."
 
-      # - name: Upload SARIF file
-      #   uses: github/codeql-action/upload-sarif@v2
-      #   with:
-      #     # Path to SARIF file relative to the root of the repository
-      #     sarif_file: results.sarif
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          # Path to SARIF file relative to the root of the repository
+          sarif_file: results.sarif
