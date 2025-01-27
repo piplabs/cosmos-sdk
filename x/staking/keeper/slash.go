@@ -378,12 +378,16 @@ func (k Keeper) SlashRedelegation(ctx context.Context, srcValidator types.Valida
 		} else if err != nil {
 			return math.ZeroInt(), err
 		}
-
 		if sharesToUnbond.GT(periodDelegation.Shares) {
 			sharesToUnbond = periodDelegation.Shares
 		}
 
-		tokensToBurn, err := k.Unbond(ctx, delegatorAddress, valDstAddr, true, entry.PeriodDelegationId, sharesToUnbond)
+		rewardsSharesToUnbond := (sharesToUnbond.Mul(periodDelegation.RewardsShares)).Quo(periodDelegation.Shares)
+		if rewardsSharesToUnbond.GT(periodDelegation.RewardsShares) {
+			rewardsSharesToUnbond = periodDelegation.RewardsShares
+		}
+
+		tokensToBurn, err := k.Unbond(ctx, delegatorAddress, valDstAddr, true, entry.PeriodDelegationId, sharesToUnbond, rewardsSharesToUnbond)
 		if err != nil {
 			return math.ZeroInt(), err
 		}

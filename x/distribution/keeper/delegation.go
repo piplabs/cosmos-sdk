@@ -38,7 +38,7 @@ func (k Keeper) initializeDelegation(ctx context.Context, val sdk.ValAddress, de
 	// calculate delegation rewards stake in tokens
 	// we don't store directly, so multiply delegation rewards shares * (tokens per rewards share)
 	// note: necessary to truncate so we don't allow withdrawing more rewards than owed
-	rewardsStake := validator.RewardsTokensFromRewardsShares(delegation.GetRewardsShares())
+	rewardsStake := validator.RewardsTokensFromRewardsSharesTruncated(delegation.GetRewardsShares())
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	return k.SetDelegatorStartingInfo(ctx, val, del, types.NewDelegatorStartingInfo(previousPeriod, rewardsStake, uint64(sdkCtx.BlockHeight())))
 }
@@ -108,7 +108,7 @@ func (k Keeper) CalculateDelegationRewards(ctx context.Context, val stakingtypes
 	}
 
 	startingPeriod := startingInfo.PreviousPeriod
-	rewardsStake := startingInfo.RewardsStake.TruncateDec()
+	rewardsStake := startingInfo.RewardsStake
 
 	// Iterate through slashes and withdraw with calculated staking for
 	// distribution periods. These period offsets are dependent on *when* slashes
@@ -149,6 +149,38 @@ func (k Keeper) CalculateDelegationRewards(ctx context.Context, val stakingtypes
 	currentRewardsStake := val.RewardsTokensFromRewardsShares(del.GetRewardsShares())
 
 	if rewardsStake.GT(currentRewardsStake) {
+		// AccountI for rounding inconsistencies between:
+		//
+		//     currentStake: calculated as in staking with a single computation
+		//     stake:        calculated as an accumulation of stake
+		//                   calculations across validator's distribution periods
+		//
+		// These inconsistencies are due to differing order of operations which
+		// will inevitably have different accumulated rounding and may lead to
+		// the smallest decimal place being one greater in stake than
+		// currentStake. When we calculated slashing by period, even if we
+		// round down for each slash fraction, it's possible due to how much is
+		// being rounded that we slash less when slashing by period instead of
+		// for when we slash without periods. In other words, the single slash,
+		// and the slashing by period could both be rounding down but the
+		// slashing by period is simply rounding down less, thus making stake >
+		// currentStake
+		//
+		// A small amount of this error is tolerated and corrected for,
+		// however any greater amount should be considered a breach in expected
+		// behavior.
+		marginOfErr := math.LegacySmallestDec().MulInt64(3)
+		if rewardsStake.GT(currentRewardsStake.Add(marginOfErr)) {
+			k.Logger(ctx).Error(
+				"[MONITOR] Calculated final rewards stake for delegator greater than current rewards stake",
+				"delegator", del.GetDelegatorAddr(),
+				"validator", del.GetValidatorAddr(),
+				"calculated_rewards_stake", rewardsStake.String(),
+				"current_rewards_stake", currentRewardsStake.String(),
+				"start_height", startingHeight,
+				"end_height", endingHeight,
+			)
+		}
 		rewardsStake = currentRewardsStake.TruncateDec()
 	}
 

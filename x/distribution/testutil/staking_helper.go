@@ -16,8 +16,8 @@ func CreateValidator(pk cryptotypes.PubKey, stake math.Int) (stakingtypes.Valida
 	val, err := stakingtypes.NewValidator(sdk.ValAddress(valConsAddr).String(), pk, stakingtypes.Description{Moniker: "TestValidator"}, 0)
 	val.Tokens = stake
 	val.DelegatorShares = math.LegacyNewDecFromInt(val.Tokens)
-	val.DelegatorRewardsShares = math.LegacyNewDecFromInt(val.Tokens)
-	val.RewardsTokens = math.LegacyNewDecFromInt(stake)
+	val.RewardsTokens = math.LegacyNewDecFromInt(val.Tokens.Quo(math.NewInt(2)))
+	val.DelegatorRewardsShares = math.LegacyNewDecFromInt(val.Tokens.Quo(math.NewInt(2)))
 	return val, err
 }
 
@@ -83,6 +83,10 @@ func SlashValidator(
 	tokensToBurn := math.MinInt(slashAmount, validator.Tokens)
 	tokensToBurn = math.MaxInt(tokensToBurn, math.ZeroInt()) // defensive.
 
+	rewardsTokens := (math.LegacyNewDecFromInt(tokensToBurn).Mul(validator.GetRewardsTokens())).Quo(
+		math.LegacyNewDecFromInt(validator.GetTokens()),
+	)
+
 	// we need to calculate the *effective* slash fraction for distribution
 	if validator.Tokens.IsPositive() {
 		effectiveFraction := math.LegacyNewDecFromInt(tokensToBurn).QuoRoundUp(math.LegacyNewDecFromInt(validator.Tokens))
@@ -99,7 +103,7 @@ func SlashValidator(
 	// Deduct from validator's bonded tokens and update the validator.
 	// Burn the slashed tokens from the pool account and decrease the total supply.
 	validator.Tokens = validator.Tokens.Sub(tokensToBurn)
-	validator.RewardsTokens = validator.RewardsTokens.Sub(math.LegacyNewDecFromInt(tokensToBurn))
+	validator.RewardsTokens = validator.RewardsTokens.Sub(rewardsTokens)
 
 	return tokensToBurn
 }
@@ -139,11 +143,11 @@ func Delegate(
 	}
 
 	// Add tokens from delegation to validator
-	updateVal, newShares, _ := validator.AddTokensFromDel(amount, math.LegacyOneDec())
+	updateVal, newShares, newRewardsShares := validator.AddTokensFromDel(amount, math.LegacyNewDecFromInt(amount.Quo(math.NewInt(2))))
 	*validator = updateVal
 
 	delegation.Shares = delegation.Shares.Add(newShares)
-	delegation.RewardsShares = delegation.RewardsShares.Add(newShares)
+	delegation.RewardsShares = delegation.RewardsShares.Add(newRewardsShares)
 
 	return newShares, *delegation, nil
 }
