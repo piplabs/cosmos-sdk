@@ -33,8 +33,8 @@ func (k Keeper) handleEquivocationEvidence(ctx context.Context, evidence *types.
 		return err
 	}
 
-	if sdkCtx.BlockHeight() < int64(singularityHeight) {
-		logger.Debug("skip handling evidence before singularity")
+	if evidence.GetHeight() <= int64(singularityHeight) {
+		logger.Debug("skip handling evidence before singularity", "evidence", evidence.String())
 		return nil
 	}
 

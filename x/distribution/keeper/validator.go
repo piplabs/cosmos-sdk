@@ -55,7 +55,7 @@ func (k Keeper) IncrementValidatorPeriod(ctx context.Context, val stakingtypes.V
 
 	// calculate current ratio
 	var current sdk.DecCoins
-	if val.GetTokens().IsZero() {
+	if val.GetRewardsTokens().IsZero() {
 
 		// can't calculate ratio for zero-token validators
 		// ergo we instead add to the community pool

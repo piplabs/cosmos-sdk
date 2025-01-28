@@ -12,7 +12,6 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -86,7 +85,7 @@ func (sh *Helper) Delegate(delegator sdk.AccAddress, val sdk.ValAddress, amount 
 	coin := sdk.NewCoin(sh.Denom, amount)
 	msg := stakingtypes.NewMsgDelegate(
 		delegator.String(), val.String(), coin,
-		types.FlexiblePeriodDelegationID, 0,
+		stakingtypes.FlexiblePeriodDelegationID, 0,
 	)
 	res, err := sh.msgSrvr.Delegate(sh.Ctx, msg)
 	require.NoError(sh.t, err)
@@ -98,7 +97,7 @@ func (sh *Helper) DelegateWithPower(delegator sdk.AccAddress, val sdk.ValAddress
 	coin := sdk.NewCoin(sh.Denom, sh.k.TokensFromConsensusPower(sh.Ctx, power))
 	msg := stakingtypes.NewMsgDelegate(
 		delegator.String(), val.String(), coin,
-		types.FlexiblePeriodDelegationID, 0,
+		stakingtypes.FlexiblePeriodDelegationID, 0,
 	)
 	res, err := sh.msgSrvr.Delegate(sh.Ctx, msg)
 	require.NoError(sh.t, err)

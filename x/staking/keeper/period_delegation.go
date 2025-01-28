@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
+	"cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -15,8 +15,7 @@ import (
 // GetOrCreatePeriodDelegation gets the period delegation or creates a new one.
 func (k Keeper) GetOrCreatePeriodDelegation(
 	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress,
-	periodDelegationID string,
-	periodType int32, endTime time.Time,
+	periodDelegationID string, periodType int32, endTime time.Time,
 ) (types.PeriodDelegation, error) {
 	periodDelegation, err := k.GetPeriodDelegation(ctx, delAddr, valAddr, periodDelegationID)
 	if errors.Is(err, types.ErrNoPeriodDelegation) {

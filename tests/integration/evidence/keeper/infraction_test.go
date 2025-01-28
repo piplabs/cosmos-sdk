@@ -309,6 +309,70 @@ func TestHandleDoubleSign_TooOld(t *testing.T) {
 	assert.Assert(t, f.slashingKeeper.IsTombstoned(ctx, sdk.ConsAddress(valpubkey.Address())) == false)
 }
 
+func TestHandleDoubleSign_Singularity(t *testing.T) {
+	t.Parallel()
+	f := initFixture(t)
+
+	ctx := f.sdkCtx.WithIsCheckTx(false).WithBlockHeight(stakingtypes.DefaultSingularityHeight - 1)
+	populateValidators(t, f)
+
+	power := int64(100)
+	stakingParams, err := f.stakingKeeper.GetParams(ctx)
+	assert.NilError(t, err)
+	operatorAddr, valpubkey := valAddresses[0], pubkeys[0]
+	tstaking := stakingtestutil.NewHelper(t, ctx, f.stakingKeeper)
+
+	selfDelegation := tstaking.CreateValidatorWithValPower(operatorAddr, valpubkey, power, true)
+
+	// execute end-blocker and verify validator attributes
+	_, err = f.stakingKeeper.EndBlocker(f.sdkCtx)
+	assert.NilError(t, err)
+	assert.DeepEqual(t,
+		f.bankKeeper.GetAllBalances(ctx, sdk.AccAddress(operatorAddr)).String(),
+		sdk.NewCoins(sdk.NewCoin(stakingParams.BondDenom, initAmt.Sub(selfDelegation))).String(),
+	)
+	val, err := f.stakingKeeper.Validator(ctx, operatorAddr)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, selfDelegation, val.GetBondedTokens())
+
+	assert.NilError(t, f.slashingKeeper.AddPubkey(f.sdkCtx, valpubkey))
+
+	info := slashingtypes.NewValidatorSigningInfo(sdk.ConsAddress(valpubkey.Address()), f.sdkCtx.BlockHeight(), int64(0), time.Unix(0, 0), false, int64(0))
+	assert.NilError(t, f.slashingKeeper.SetValidatorSigningInfo(f.sdkCtx, sdk.ConsAddress(valpubkey.Address()), info))
+
+	// handle a signature to set signing info
+	assert.NilError(t, f.slashingKeeper.HandleValidatorSignature(ctx, valpubkey.Address(), selfDelegation.Int64(), comet.BlockIDFlagCommit))
+
+	val, err = f.stakingKeeper.Validator(ctx, operatorAddr)
+	assert.NilError(t, err)
+	oldTokens := val.GetTokens()
+
+	// double sign before the singularity block
+	nci := NewCometInfo(abci.RequestFinalizeBlock{
+		Misbehavior: []abci.Misbehavior{{
+			Validator: abci.Validator{Address: valpubkey.Address(), Power: power},
+			Type:      abci.MisbehaviorType_DUPLICATE_VOTE,
+			Time:      time.Now().UTC(),
+			Height:    stakingtypes.DefaultSingularityHeight - 1,
+		}},
+	})
+
+	// commit evidence at block height DefaultSingularityHeight + 1 for infraction made at height DefaultSingularityHeight - 1
+	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 2)
+	ctx = ctx.WithCometInfo(nci)
+	assert.NilError(t, f.evidenceKeeper.BeginBlocker(ctx.WithCometInfo(nci)))
+
+	// should not be jailed and tombstoned
+	val, err = f.stakingKeeper.Validator(ctx, operatorAddr)
+	assert.NilError(t, err)
+	assert.Assert(t, val.IsJailed() == false)
+	assert.Assert(t, f.slashingKeeper.IsTombstoned(ctx, sdk.ConsAddress(valpubkey.Address())) == false)
+
+	// tokens should be same
+	newTokens := val.GetTokens()
+	assert.Assert(t, newTokens.Equal(oldTokens))
+}
+
 func populateValidators(t assert.TestingT, f *fixture) {
 	// add accounts and set total supply
 	totalSupplyAmt := initAmt.MulRaw(int64(len(valAddresses)))

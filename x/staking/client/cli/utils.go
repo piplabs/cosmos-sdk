@@ -106,7 +106,8 @@ func parseAndValidateValidatorJSON(cdc codec.Codec, path string) (validator, err
 		Details:           v.Details,
 		CommissionRates:   commissionRates,
 		MinSelfDelegation: minSelfDelegation,
-		SupportTokenType:  int32(supportTokenType),
+		// #nosec G109
+		SupportTokenType: int32(supportTokenType),
 	}, nil
 }
 

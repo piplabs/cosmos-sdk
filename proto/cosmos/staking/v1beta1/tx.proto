@@ -140,6 +140,8 @@ message MsgBeginRedelegate {
 message MsgBeginRedelegateResponse {
   google.protobuf.Timestamp completion_time = 1
       [(gogoproto.nullable) = false, (amino.dont_omitempty) = true, (gogoproto.stdtime) = true];
+  // amount returns the amount of redelegated coins
+  cosmos.base.v1beta1.Coin amount = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
 // MsgUndelegate defines a SDK message for performing an undelegation from a
