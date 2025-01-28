@@ -447,7 +447,7 @@ func (v Validator) RemoveTokens(tokens math.Int) Validator {
 // NOTE: because token fractions are left in the valiadator,
 //
 //	the exchange rate of future shares of this validator can increase.
-func (v Validator) RemoveDelShares(delShares math.LegacyDec, rewardsShares math.LegacyDec) (Validator, math.Int) {
+func (v Validator) RemoveDelShares(delShares, rewardsShares math.LegacyDec) (Validator, math.Int) {
 	remainingShares := v.DelegatorShares.Sub(delShares)
 
 	var issuedTokens math.Int

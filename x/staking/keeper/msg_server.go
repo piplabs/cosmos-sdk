@@ -220,7 +220,7 @@ func (k msgServer) Delegate(ctx context.Context, msg *types.MsgDelegate) (*types
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyNewShares, newShares.String()),
 			sdk.NewAttribute(types.AttributeKeyNewRewardsShares, newRewardsShares.String()),
-			sdk.NewAttribute(types.AttributeKeyPeriodDelegationId, msg.PeriodDelegationId),
+			sdk.NewAttribute(types.AttributeKeyPeriodDelegationID, msg.PeriodDelegationId),
 			sdk.NewAttribute(types.AttributeKeyPeriodType, fmt.Sprintf("%d", msg.PeriodType)),
 		),
 	})

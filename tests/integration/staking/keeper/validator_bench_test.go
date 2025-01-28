@@ -115,6 +115,8 @@ func BenchmarkGetValidatorDelegationsLegacy(b *testing.B) {
 			}
 
 			periodDel := types.NewPeriodDelegation(
+				delegator.String(),
+				val.String(),
 				types.FlexiblePeriodDelegationID,
 				math.LegacyNewDec(int64(i)),
 				math.LegacyNewDec(int64(i)),

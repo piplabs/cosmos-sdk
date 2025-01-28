@@ -106,36 +106,36 @@ func NewMsgEditValidator(valAddr string, description Description, newRate *math.
 }
 
 // NewMsgDelegate creates a new MsgDelegate instance.
-func NewMsgDelegate(delAddr, valAddr string, amount sdk.Coin, periodDelegationId string, periodType int32) *MsgDelegate {
+func NewMsgDelegate(delAddr, valAddr string, amount sdk.Coin, periodDelegationID string, periodType int32) *MsgDelegate {
 	return &MsgDelegate{
 		DelegatorAddress:   delAddr,
 		ValidatorAddress:   valAddr,
 		Amount:             amount,
-		PeriodDelegationId: periodDelegationId,
+		PeriodDelegationId: periodDelegationID,
 		PeriodType:         periodType,
 	}
 }
 
 // NewMsgBeginRedelegate creates a new MsgBeginRedelegate instance.
 func NewMsgBeginRedelegate(
-	delAddr, valSrcAddr, valDstAddr string, periodDelegationId string, amount sdk.Coin,
+	delAddr, valSrcAddr, valDstAddr, periodDelegationID string, amount sdk.Coin,
 ) *MsgBeginRedelegate {
 	return &MsgBeginRedelegate{
 		DelegatorAddress:    delAddr,
 		ValidatorSrcAddress: valSrcAddr,
 		ValidatorDstAddress: valDstAddr,
 		Amount:              amount,
-		PeriodDelegationId:  periodDelegationId,
+		PeriodDelegationId:  periodDelegationID,
 	}
 }
 
 // NewMsgUndelegate creates a new MsgUndelegate instance.
-func NewMsgUndelegate(delAddr, valAddr string, periodDelegationId string, amount sdk.Coin) *MsgUndelegate {
+func NewMsgUndelegate(delAddr, valAddr, periodDelegationID string, amount sdk.Coin) *MsgUndelegate {
 	return &MsgUndelegate{
 		DelegatorAddress:   delAddr,
 		ValidatorAddress:   valAddr,
 		Amount:             amount,
-		PeriodDelegationId: periodDelegationId,
+		PeriodDelegationId: periodDelegationID,
 	}
 }
 
