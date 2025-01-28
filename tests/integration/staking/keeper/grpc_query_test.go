@@ -520,7 +520,7 @@ func TestGRPCQueryUnbondingDelegation(t *testing.T) {
 	unbondingTokens := f.stakingKeeper.TokensFromConsensusPower(ctx, 2)
 	valAddr, err1 := sdk.ValAddressFromBech32(addrVal2)
 	assert.NilError(t, err1)
-	_, _, err := f.stakingKeeper.Undelegate(ctx, addrAcc2, valAddr, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(unbondingTokens))
+	_, _, err := f.stakingKeeper.Undelegate(ctx, addrAcc2, valAddr, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(unbondingTokens), math.LegacyNewDecFromInt(unbondingTokens).Quo(math.LegacyNewDec(2)))
 	assert.NilError(t, err)
 
 	unbond, found := f.stakingKeeper.GetUnbondingDelegation(ctx, addrAcc2, valAddr)
@@ -623,11 +623,11 @@ func TestGRPCQueryDelegatorUnbondingDelegations(t *testing.T) {
 	unbondingTokens := f.stakingKeeper.TokensFromConsensusPower(ctx, 2)
 	valAddr1, err1 := sdk.ValAddressFromBech32(addrVal)
 	assert.NilError(t, err1)
-	_, _, err := f.stakingKeeper.Undelegate(ctx, addrAcc, valAddr1, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(unbondingTokens))
+	_, _, err := f.stakingKeeper.Undelegate(ctx, addrAcc, valAddr1, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(unbondingTokens), math.LegacyNewDecFromInt(unbondingTokens).Quo(math.LegacyNewDec(2)))
 	assert.NilError(t, err)
 	valAddr2, err1 := sdk.ValAddressFromBech32(addrVal2)
 	assert.NilError(t, err1)
-	_, _, err = f.stakingKeeper.Undelegate(ctx, addrAcc, valAddr2, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(unbondingTokens))
+	_, _, err = f.stakingKeeper.Undelegate(ctx, addrAcc, valAddr2, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(unbondingTokens), math.LegacyNewDecFromInt(unbondingTokens).Quo(math.LegacyNewDec(2)))
 	assert.NilError(t, err)
 
 	unbond, found := f.stakingKeeper.GetUnbondingDelegation(ctx, addrAcc, valAddr1)
@@ -818,7 +818,7 @@ func TestGRPCQueryRedelegations(t *testing.T) {
 	val2bz, err := f.stakingKeeper.ValidatorAddressCodec().StringToBytes(val2.GetOperator())
 	assert.NilError(t, err)
 
-	_, err = f.stakingKeeper.BeginRedelegation(ctx, addrAcc1, val1bz, val2bz, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(rdAmount))
+	_, _, err = f.stakingKeeper.BeginRedelegation(ctx, addrAcc1, val1bz, val2bz, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(rdAmount), math.LegacyNewDecFromInt(rdAmount).Quo(math.LegacyNewDec(2)))
 	assert.NilError(t, err)
 	applyValidatorSetUpdates(t, ctx, f.stakingKeeper, -1)
 
@@ -933,7 +933,7 @@ func TestGRPCQueryValidatorUnbondingDelegations(t *testing.T) {
 	undelAmount := f.stakingKeeper.TokensFromConsensusPower(ctx, 2)
 	valbz, err := f.stakingKeeper.ValidatorAddressCodec().StringToBytes(val1.GetOperator())
 	assert.NilError(t, err)
-	_, _, err = f.stakingKeeper.Undelegate(ctx, addrAcc1, valbz, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(undelAmount))
+	_, _, err = f.stakingKeeper.Undelegate(ctx, addrAcc1, valbz, types.FlexiblePeriodDelegationID, math.LegacyNewDecFromInt(undelAmount), math.LegacyNewDecFromInt(undelAmount).Quo(math.LegacyNewDec(2)))
 	assert.NilError(t, err)
 	applyValidatorSetUpdates(t, ctx, f.stakingKeeper, -1)
 

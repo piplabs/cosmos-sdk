@@ -222,6 +222,7 @@ $ %s tx staking delegate cosmosvalopers1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm 1
 				return err
 			}
 
+			// #nosec G109
 			msg := types.NewMsgDelegate(delAddr, args[0], amount, args[2], int32(periodType))
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
@@ -643,6 +644,7 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 		description,
 		commissionRates,
 		minSelfDelegation,
+		// #nosec G109
 		int32(supportTokenType),
 	)
 	if err != nil {

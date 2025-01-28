@@ -21,6 +21,6 @@ const (
 	AttributeKeyCompletionTime     = "completion_time"
 	AttributeKeyNewShares          = "new_shares"
 	AttributeKeyNewRewardsShares   = "new_rewards_shares"
-	AttributeKeyPeriodDelegationId = "period_delegation_id"
+	AttributeKeyPeriodDelegationID = "period_delegation_id"
 	AttributeKeyPeriodType         = "period_type"
 )

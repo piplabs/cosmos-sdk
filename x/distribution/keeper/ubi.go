@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
@@ -17,7 +18,7 @@ func (k Keeper) GetUbiBalanceByDenom(ctx context.Context, denom string) (math.In
 	return feePool.Ubi.AmountOf(denom).TruncateInt(), nil
 }
 
-func (k Keeper) WithdrawUbiByDenomToModule(ctx context.Context, denom string, recipientModule string) (sdk.Coin, error) {
+func (k Keeper) WithdrawUbiByDenomToModule(ctx context.Context, denom, recipientModule string) (sdk.Coin, error) {
 	feePool, err := k.FeePool.Get(ctx)
 	if err != nil {
 		return sdk.Coin{}, err
