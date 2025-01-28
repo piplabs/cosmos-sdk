@@ -70,6 +70,21 @@ func (mr *MockStakingKeeperMockRecorder) GetParams(ctx interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParams", reflect.TypeOf((*MockStakingKeeper)(nil).GetParams), ctx)
 }
 
+// GetSingularityHeight mocks base method.
+func (m *MockStakingKeeper) GetSingularityHeight(ctx context.Context) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSingularityHeight", ctx)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSingularityHeight indicates an expected call of GetSingularityHeight.
+func (mr *MockStakingKeeperMockRecorder) GetSingularityHeight(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSingularityHeight", reflect.TypeOf((*MockStakingKeeper)(nil).GetSingularityHeight), ctx)
+}
+
 // ValidatorByConsAddr mocks base method.
 func (m *MockStakingKeeper) ValidatorByConsAddr(arg0 context.Context, arg1 types0.ConsAddress) (types1.ValidatorI, error) {
 	m.ctrl.T.Helper()
