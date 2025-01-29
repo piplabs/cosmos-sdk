@@ -314,6 +314,90 @@ func (k Querier) DelegatorDelegations(ctx context.Context, req *types.QueryDeleg
 	return &types.QueryDelegatorDelegationsResponse{DelegationResponses: delegationResps, Pagination: pageRes}, nil
 }
 
+func (k Querier) PeriodDelegations(ctx context.Context, req *types.QueryPeriodDelegationsRequest) (*types.QueryPeriodDelegationsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	if req.DelegatorAddr == "" {
+		return nil, status.Error(codes.InvalidArgument, "delegator address cannot be empty")
+	}
+	if req.ValidatorAddr == "" {
+		return nil, status.Error(codes.InvalidArgument, "validator address cannot be empty")
+	}
+	var periodDelegations types.PeriodDelegations
+
+	delAddr, err := k.authKeeper.AddressCodec().StringToBytes(req.DelegatorAddr)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid delegator address")
+	}
+
+	valAddr, err := k.validatorAddressCodec.StringToBytes(req.ValidatorAddr)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid validator address")
+	}
+
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	pdStore := prefix.NewStore(store, types.GetPeriodDelegationsKey(delAddr, valAddr))
+	pageRes, err := query.Paginate(pdStore, req.Pagination, func(key, value []byte) error {
+		periodDelegation, err := types.UnmarshalPeriodDelegation(k.cdc, value)
+		if err != nil {
+			return err
+		}
+		periodDelegations = append(periodDelegations, periodDelegation)
+		return nil
+	})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	delegationResps, err := periodDelegationsToPeriodDelegationResponses(ctx, k.Keeper, periodDelegations)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryPeriodDelegationsResponse{PeriodDelegationResponses: delegationResps, Pagination: pageRes}, nil
+}
+
+// PeriodDelegation queries the period delegation info for given period delegation id, delegator and validator address.
+func (k Querier) PeriodDelegation(ctx context.Context, req *types.QueryPeriodDelegationRequest) (*types.QueryPeriodDelegationResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	if req.DelegatorAddr == "" {
+		return nil, status.Error(codes.InvalidArgument, "delegator address cannot be empty")
+	}
+	if req.ValidatorAddr == "" {
+		return nil, status.Error(codes.InvalidArgument, "validator address cannot be empty")
+	}
+	if req.PeriodDelegationId == "" {
+		return nil, status.Error(codes.InvalidArgument, "period delegation id cannot be empty")
+	}
+
+	delAddr, err := k.authKeeper.AddressCodec().StringToBytes(req.DelegatorAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	valAddr, err := k.validatorAddressCodec.StringToBytes(req.ValidatorAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	periodDelegation, err := k.GetPeriodDelegation(ctx, delAddr, valAddr, req.PeriodDelegationId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	periodDelegationResp, err := periodDelegationToPeriodDelegationResponse(ctx, k.Keeper, periodDelegation)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryPeriodDelegationResponse{PeriodDelegationResponse: periodDelegationResp}, nil
+}
+
 // DelegatorValidator queries validator info for given delegator validator pair
 func (k Querier) DelegatorValidator(ctx context.Context, req *types.QueryDelegatorValidatorRequest) (*types.QueryDelegatorValidatorResponse, error) {
 	if req == nil {
@@ -606,6 +690,43 @@ func delegationsToDelegationResponses(ctx context.Context, k *Keeper, delegation
 		}
 
 		resp[i] = delResp
+	}
+
+	return resp, nil
+}
+
+func periodDelegationToPeriodDelegationResponse(ctx context.Context, k *Keeper, pd types.PeriodDelegation) (types.PeriodDelegationResponse, error) {
+	valAddr, err := k.validatorAddressCodec.StringToBytes(pd.GetValidatorAddress())
+	if err != nil {
+		return types.PeriodDelegationResponse{}, err
+	}
+
+	val, err := k.GetValidator(ctx, valAddr)
+	if err != nil {
+		return types.PeriodDelegationResponse{}, err
+	}
+
+	bondDenom, err := k.BondDenom(ctx)
+	if err != nil {
+		return types.PeriodDelegationResponse{}, err
+	}
+
+	return types.NewPeriodDelegationResp(
+		pd,
+		sdk.NewCoin(bondDenom, val.TokensFromShares(pd.Shares).TruncateInt()),
+	), nil
+}
+
+func periodDelegationsToPeriodDelegationResponses(ctx context.Context, k *Keeper, periodDelegations types.PeriodDelegations) (types.PeriodDelegationResponses, error) {
+	resp := make(types.PeriodDelegationResponses, len(periodDelegations))
+
+	for i, pd := range periodDelegations {
+		pdResp, err := periodDelegationToPeriodDelegationResponse(ctx, k, pd)
+		if err != nil {
+			return nil, err
+		}
+
+		resp[i] = pdResp
 	}
 
 	return resp, nil
