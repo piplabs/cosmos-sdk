@@ -26,6 +26,8 @@ const (
 	Query_Delegation_FullMethodName                    = "/cosmos.staking.v1beta1.Query/Delegation"
 	Query_UnbondingDelegation_FullMethodName           = "/cosmos.staking.v1beta1.Query/UnbondingDelegation"
 	Query_DelegatorDelegations_FullMethodName          = "/cosmos.staking.v1beta1.Query/DelegatorDelegations"
+	Query_PeriodDelegations_FullMethodName             = "/cosmos.staking.v1beta1.Query/PeriodDelegations"
+	Query_PeriodDelegation_FullMethodName              = "/cosmos.staking.v1beta1.Query/PeriodDelegation"
 	Query_DelegatorUnbondingDelegations_FullMethodName = "/cosmos.staking.v1beta1.Query/DelegatorUnbondingDelegations"
 	Query_Redelegations_FullMethodName                 = "/cosmos.staking.v1beta1.Query/Redelegations"
 	Query_DelegatorValidators_FullMethodName           = "/cosmos.staking.v1beta1.Query/DelegatorValidators"
@@ -66,6 +68,11 @@ type QueryClient interface {
 	// When called from another module, this query might consume a high amount of
 	// gas if the pagination field is incorrectly set.
 	DelegatorDelegations(ctx context.Context, in *QueryDelegatorDelegationsRequest, opts ...grpc.CallOption) (*QueryDelegatorDelegationsResponse, error)
+	// PeriodDelegations queries all period delegations of a given delegator address and validator address.
+	PeriodDelegations(ctx context.Context, in *QueryPeriodDelegationsRequest, opts ...grpc.CallOption) (*QueryPeriodDelegationsResponse, error)
+	// PeriodDelegation queries the period delegation info for given delegator address, validator
+	// address and period delegation id.
+	PeriodDelegation(ctx context.Context, in *QueryPeriodDelegationRequest, opts ...grpc.CallOption) (*QueryPeriodDelegationResponse, error)
 	// DelegatorUnbondingDelegations queries all unbonding delegations of a given
 	// delegator address.
 	//
@@ -159,6 +166,24 @@ func (c *queryClient) UnbondingDelegation(ctx context.Context, in *QueryUnbondin
 func (c *queryClient) DelegatorDelegations(ctx context.Context, in *QueryDelegatorDelegationsRequest, opts ...grpc.CallOption) (*QueryDelegatorDelegationsResponse, error) {
 	out := new(QueryDelegatorDelegationsResponse)
 	err := c.cc.Invoke(ctx, Query_DelegatorDelegations_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) PeriodDelegations(ctx context.Context, in *QueryPeriodDelegationsRequest, opts ...grpc.CallOption) (*QueryPeriodDelegationsResponse, error) {
+	out := new(QueryPeriodDelegationsResponse)
+	err := c.cc.Invoke(ctx, Query_PeriodDelegations_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) PeriodDelegation(ctx context.Context, in *QueryPeriodDelegationRequest, opts ...grpc.CallOption) (*QueryPeriodDelegationResponse, error) {
+	out := new(QueryPeriodDelegationResponse)
+	err := c.cc.Invoke(ctx, Query_PeriodDelegation_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -259,6 +284,11 @@ type QueryServer interface {
 	// When called from another module, this query might consume a high amount of
 	// gas if the pagination field is incorrectly set.
 	DelegatorDelegations(context.Context, *QueryDelegatorDelegationsRequest) (*QueryDelegatorDelegationsResponse, error)
+	// PeriodDelegations queries all period delegations of a given delegator address and validator address.
+	PeriodDelegations(context.Context, *QueryPeriodDelegationsRequest) (*QueryPeriodDelegationsResponse, error)
+	// PeriodDelegation queries the period delegation info for given delegator address, validator
+	// address and period delegation id.
+	PeriodDelegation(context.Context, *QueryPeriodDelegationRequest) (*QueryPeriodDelegationResponse, error)
 	// DelegatorUnbondingDelegations queries all unbonding delegations of a given
 	// delegator address.
 	//
@@ -312,6 +342,12 @@ func (UnimplementedQueryServer) UnbondingDelegation(context.Context, *QueryUnbon
 }
 func (UnimplementedQueryServer) DelegatorDelegations(context.Context, *QueryDelegatorDelegationsRequest) (*QueryDelegatorDelegationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DelegatorDelegations not implemented")
+}
+func (UnimplementedQueryServer) PeriodDelegations(context.Context, *QueryPeriodDelegationsRequest) (*QueryPeriodDelegationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PeriodDelegations not implemented")
+}
+func (UnimplementedQueryServer) PeriodDelegation(context.Context, *QueryPeriodDelegationRequest) (*QueryPeriodDelegationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PeriodDelegation not implemented")
 }
 func (UnimplementedQueryServer) DelegatorUnbondingDelegations(context.Context, *QueryDelegatorUnbondingDelegationsRequest) (*QueryDelegatorUnbondingDelegationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DelegatorUnbondingDelegations not implemented")
@@ -469,6 +505,42 @@ func _Query_DelegatorDelegations_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).DelegatorDelegations(ctx, req.(*QueryDelegatorDelegationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_PeriodDelegations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPeriodDelegationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).PeriodDelegations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_PeriodDelegations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).PeriodDelegations(ctx, req.(*QueryPeriodDelegationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_PeriodDelegation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPeriodDelegationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).PeriodDelegation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_PeriodDelegation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).PeriodDelegation(ctx, req.(*QueryPeriodDelegationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -633,6 +705,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DelegatorDelegations",
 			Handler:    _Query_DelegatorDelegations_Handler,
+		},
+		{
+			MethodName: "PeriodDelegations",
+			Handler:    _Query_PeriodDelegations_Handler,
+		},
+		{
+			MethodName: "PeriodDelegation",
+			Handler:    _Query_PeriodDelegation_Handler,
 		},
 		{
 			MethodName: "DelegatorUnbondingDelegations",
