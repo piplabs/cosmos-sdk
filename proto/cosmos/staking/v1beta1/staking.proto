@@ -430,6 +430,16 @@ message DelegationResponse {
   cosmos.base.v1beta1.Coin balance = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
+// PeriodDelegationResponse is equivalent to PeriodDelegation except that it contains a
+// balance in addition to shares which is more suitable for client responses.
+message PeriodDelegationResponse {
+  option (gogoproto.equal) = false;
+
+  PeriodDelegation period_delegation = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  cosmos.base.v1beta1.Coin balance = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
 // RedelegationEntryResponse is equivalent to a RedelegationEntry except that it
 // contains a balance in addition to shares which is more suitable for client
 // responses.
