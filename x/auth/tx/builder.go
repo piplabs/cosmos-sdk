@@ -221,6 +221,10 @@ func (w *wrapper) GetTimeoutHeight() uint64 {
 	return w.tx.Body.TimeoutHeight
 }
 
+func (w *wrapper) GetTip() *tx.Tip {
+	return w.tx.AuthInfo.Tip
+}
+
 func (w *wrapper) GetSignaturesV2() ([]signing.SignatureV2, error) {
 	signerInfos := w.tx.AuthInfo.SignerInfos
 	sigs := w.tx.Signatures
