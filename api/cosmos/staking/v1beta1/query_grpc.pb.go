@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Query_Validators_FullMethodName                    = "/cosmos.staking.v1beta1.Query/Validators"
 	Query_Validator_FullMethodName                     = "/cosmos.staking.v1beta1.Query/Validator"
+	Query_Delegations_FullMethodName                   = "/cosmos.staking.v1beta1.Query/Delegations"
 	Query_ValidatorDelegations_FullMethodName          = "/cosmos.staking.v1beta1.Query/ValidatorDelegations"
 	Query_ValidatorUnbondingDelegations_FullMethodName = "/cosmos.staking.v1beta1.Query/ValidatorUnbondingDelegations"
 	Query_Delegation_FullMethodName                    = "/cosmos.staking.v1beta1.Query/Delegation"
@@ -48,6 +49,8 @@ type QueryClient interface {
 	Validators(ctx context.Context, in *QueryValidatorsRequest, opts ...grpc.CallOption) (*QueryValidatorsResponse, error)
 	// Validator queries validator info for given validator address.
 	Validator(ctx context.Context, in *QueryValidatorRequest, opts ...grpc.CallOption) (*QueryValidatorResponse, error)
+	// Delegations queries delegations
+	Delegations(ctx context.Context, in *QueryDelegationsRequest, opts ...grpc.CallOption) (*QueryDelegationsResponse, error)
 	// ValidatorDelegations queries delegate info for given validator.
 	//
 	// When called from another module, this query might consume a high amount of
@@ -121,6 +124,15 @@ func (c *queryClient) Validators(ctx context.Context, in *QueryValidatorsRequest
 func (c *queryClient) Validator(ctx context.Context, in *QueryValidatorRequest, opts ...grpc.CallOption) (*QueryValidatorResponse, error) {
 	out := new(QueryValidatorResponse)
 	err := c.cc.Invoke(ctx, Query_Validator_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Delegations(ctx context.Context, in *QueryDelegationsRequest, opts ...grpc.CallOption) (*QueryDelegationsResponse, error) {
+	out := new(QueryDelegationsResponse)
+	err := c.cc.Invoke(ctx, Query_Delegations_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -264,6 +276,8 @@ type QueryServer interface {
 	Validators(context.Context, *QueryValidatorsRequest) (*QueryValidatorsResponse, error)
 	// Validator queries validator info for given validator address.
 	Validator(context.Context, *QueryValidatorRequest) (*QueryValidatorResponse, error)
+	// Delegations queries delegations
+	Delegations(context.Context, *QueryDelegationsRequest) (*QueryDelegationsResponse, error)
 	// ValidatorDelegations queries delegate info for given validator.
 	//
 	// When called from another module, this query might consume a high amount of
@@ -327,6 +341,9 @@ func (UnimplementedQueryServer) Validators(context.Context, *QueryValidatorsRequ
 }
 func (UnimplementedQueryServer) Validator(context.Context, *QueryValidatorRequest) (*QueryValidatorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Validator not implemented")
+}
+func (UnimplementedQueryServer) Delegations(context.Context, *QueryDelegationsRequest) (*QueryDelegationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delegations not implemented")
 }
 func (UnimplementedQueryServer) ValidatorDelegations(context.Context, *QueryValidatorDelegationsRequest) (*QueryValidatorDelegationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidatorDelegations not implemented")
@@ -415,6 +432,24 @@ func _Query_Validator_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).Validator(ctx, req.(*QueryValidatorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Delegations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryDelegationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Delegations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Delegations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Delegations(ctx, req.(*QueryDelegationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -685,6 +720,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Validator",
 			Handler:    _Query_Validator_Handler,
+		},
+		{
+			MethodName: "Delegations",
+			Handler:    _Query_Delegations_Handler,
 		},
 		{
 			MethodName: "ValidatorDelegations",

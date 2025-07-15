@@ -85,6 +85,37 @@ func (k Querier) Validator(ctx context.Context, req *types.QueryValidatorRequest
 	return &types.QueryValidatorResponse{Validator: validator}, nil
 }
 
+func (k Querier) Delegations(ctx context.Context, req *types.QueryDelegationsRequest) (*types.QueryDelegationsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "empty request")
+	}
+
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	delStore := prefix.NewStore(store, types.DelegationKey)
+
+	var (
+		dels    types.Delegations
+		pageRes *query.PageResponse
+	)
+	pageRes, err := query.Paginate(delStore, req.Pagination, func(key, value []byte) error {
+		delegation, err := types.UnmarshalDelegation(k.cdc, value)
+		if err != nil {
+			return err
+		}
+
+		dels = append(dels, delegation)
+		return nil
+	})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryDelegationsResponse{
+		Delegations: dels,
+		Pagination:  pageRes,
+	}, nil
+}
+
 // ValidatorDelegations queries delegate info for given validator
 func (k Querier) ValidatorDelegations(ctx context.Context, req *types.QueryValidatorDelegationsRequest) (*types.QueryValidatorDelegationsResponse, error) {
 	if req == nil {
