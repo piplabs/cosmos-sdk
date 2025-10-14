@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
-	github.com/cosmos/cosmos-sdk v0.50.6
+	github.com/cosmos/cosmos-sdk v0.50.11
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.7.0 // indirect
 	github.com/cosmos/iavl v1.1.4 // indirect
@@ -25,7 +25,7 @@ require (
 
 require (
 	cosmossdk.io/math v1.3.0
-	github.com/cometbft/cometbft v0.38.8
+	github.com/cometbft/cometbft v0.38.17
 	github.com/cometbft/cometbft/api v1.0.0-rc.1
 	github.com/creachadair/tomledit v0.0.26
 	github.com/tidwall/gjson v1.14.2
@@ -146,7 +146,7 @@ require (
 	github.com/zondax/ledger-go v0.14.3 // indirect
 	go.etcd.io/bbolt v1.3.8 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240531132922-fd00a4e0eefc // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
