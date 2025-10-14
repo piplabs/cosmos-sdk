@@ -7,7 +7,7 @@ require (
 	cosmossdk.io/client/v2 v2.0.0-beta.1.0.20240118210941-3897926e722e
 	cosmossdk.io/core v0.11.1
 	cosmossdk.io/errors v1.0.1
-	github.com/cosmos/cosmos-sdk v0.50.10
+	github.com/cosmos/cosmos-sdk v0.50.11
 	github.com/manifoldco/promptui v0.9.0
 	github.com/pelletier/go-toml/v2 v2.2.3
 	github.com/spf13/cobra v1.8.1
@@ -40,7 +40,7 @@ require (
 	github.com/cockroachdb/pebble v1.1.1 // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
-	github.com/cometbft/cometbft v0.38.12 // indirect
+	github.com/cometbft/cometbft v0.38.17 // indirect
 	github.com/cometbft/cometbft-db v0.11.0 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/cosmos-db v1.0.3-0.20240829004618-717cba019b33 // indirect
@@ -140,7 +140,7 @@ require (
 	github.com/zondax/ledger-go v0.14.3 // indirect
 	go.etcd.io/bbolt v1.3.10 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240531132922-fd00a4e0eefc // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
