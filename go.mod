@@ -18,7 +18,7 @@ require (
 	cosmossdk.io/x/tx v0.13.3
 	github.com/99designs/keyring v1.2.2
 	github.com/bgentry/speakeasy v0.2.0
-	github.com/cometbft/cometbft v1.0.0-rc1.0.20240908111210-ab0be101882f
+	github.com/cometbft/cometbft v1.0.1
 	github.com/cometbft/cometbft/api v1.0.0-rc.1
 	github.com/cosmos/btcutil v1.0.5
 	github.com/cosmos/cosmos-db v1.0.3-0.20240911104526-ddc3f09bfc22
@@ -54,7 +54,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/tendermint/go-amino v0.16.0
 	gitlab.com/yawning/secp256k1-voi v0.0.0-20230925100816-f2616030848b
-	golang.org/x/crypto v0.27.0
+	golang.org/x/crypto v0.31.0
 	golang.org/x/sync v0.8.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142
 	google.golang.org/grpc v1.67.1
