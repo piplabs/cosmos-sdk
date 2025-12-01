@@ -250,7 +250,7 @@ func (k msgServer) BeginRedelegate(ctx context.Context, msg *types.MsgBeginRedel
 	}
 
 	shares, rewardsShares, err := k.ValidateUnbondAmount(
-		ctx, delegatorAddress, valSrcAddr, msg.PeriodDelegationId, msg.Amount.Amount,
+		ctx, delegatorAddress, valSrcAddr, msg.PeriodDelegationId, msg.Amount.Amount, msg.ApplyRewardsSharesFix,
 	)
 	if err != nil {
 		return nil, err
@@ -321,7 +321,7 @@ func (k msgServer) Undelegate(ctx context.Context, msg *types.MsgUndelegate) (*t
 	}
 
 	shares, rewardsShares, err := k.ValidateUnbondAmount(
-		ctx, delegatorAddress, validatorAddress, msg.PeriodDelegationId, msg.Amount.Amount,
+		ctx, delegatorAddress, validatorAddress, msg.PeriodDelegationId, msg.Amount.Amount, msg.ApplyRewardsSharesFix,
 	)
 	if err != nil {
 		return nil, err

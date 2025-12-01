@@ -1502,7 +1502,7 @@ func (k Keeper) CompleteRedelegation(
 // valid based on upon the converted shares. If the amount is valid, the total
 // amount of respective shares is returned, otherwise an error is returned.
 func (k Keeper) ValidateUnbondAmount(
-	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, periodDelegationID string, amt math.Int,
+	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, periodDelegationID string, amt math.Int, applyRewardsSharesFix bool,
 ) (shares, rewardsShares math.LegacyDec, err error) {
 	params, err := k.GetParams(ctx)
 	if err != nil {
@@ -1540,8 +1540,14 @@ func (k Keeper) ValidateUnbondAmount(
 	}
 
 	rewardsShares = (shares.Mul(periodDelegation.RewardsShares)).Quo(periodDelegation.Shares)
-	if shares.GT(periodDelegation.RewardsShares) {
-		rewardsShares = periodDelegation.RewardsShares
+	if applyRewardsSharesFix {
+		if rewardsShares.GT(periodDelegation.RewardsShares) {
+			rewardsShares = periodDelegation.RewardsShares
+		}
+	} else {
+		if shares.GT(periodDelegation.RewardsShares) {
+			rewardsShares = periodDelegation.RewardsShares
+		}
 	}
 
 	return shares, rewardsShares, nil
