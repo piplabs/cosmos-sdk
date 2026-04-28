@@ -1199,6 +1199,16 @@ func (k Keeper) getBeginInfo(
 ) (completionTime time.Time, height int64, completeNow bool, err error) {
 	validator, err := k.GetValidator(ctx, valSrcAddr)
 	if err != nil && errors.Is(err, types.ErrNoValidatorFound) {
+		// The src validator was already unbonded and removed from the store inside Unbond's
+		// RemoveValidator path (DelegatorShares == 0 && IsUnbonded triggers removal). The
+		// redelegation should still succeed: the source's unbonding period had already
+		// elapsed before removal, so completion is immediate. Without this, the named-return
+		// `err` keeps the ErrNoValidatorFound value and BeginRedelegation propagates it back
+		// to evmstaking.ProcessRedelegate, whose CacheContext writeCache only fires on
+		// err==nil — silently rolling back the entire redelegation despite EVM tx success.
+		// See piplabs/lion-team-sync#619.
+		completeNow = true
+		err = nil
 		return
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -1207,7 +1217,9 @@ func (k Keeper) getBeginInfo(
 		return
 	}
 
-	// TODO: When would the validator not be found?
+	// NOTE: the `errors.Is(err, types.ErrNoValidatorFound)` arm of the switch below is
+	// unreachable because the early-return above handles that case. Left in place to
+	// match upstream cosmos-sdk shape; future cleanup can collapse the redundant check.
 	switch {
 	case errors.Is(err, types.ErrNoValidatorFound) || validator.IsBonded():
 		// the longest wait - just unbonding period from now
